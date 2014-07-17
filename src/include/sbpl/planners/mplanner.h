@@ -199,6 +199,7 @@ class MPlanner : public SBPLPlanner
 		
 		bool IsExpanded(int s);
 		int env_num;
+		
 	private:
 
 		//member variables
