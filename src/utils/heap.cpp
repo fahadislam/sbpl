@@ -540,14 +540,18 @@ CHeapArr::~CHeapArr()
 void CHeapArr::percolatedown(int hole, heapelement tmp, int i)
 {
   int child;
-
+  // printf("i %d\n",i);
   if (currentsize[i] != 0)
   {
 
     for (; 2*hole <= currentsize[i]; hole = child)
 	{
 	  child = 2*hole;
-
+      // printf("child %d size %d\n", child, currentsize[i]);
+        // if (child >= currentsize[i] || hole < 0)    //hack
+        // {
+        //         return;
+        // }
 	  if (child != currentsize[i] && heap[i][child+1].key < heap[i][child].key)
 	    ++child;
 	  if (heap[i][child].key < tmp.key)
@@ -566,6 +570,7 @@ void CHeapArr::percolatedown(int hole, heapelement tmp, int i)
 
 void CHeapArr::percolateup(int hole, heapelement tmp, int i)
 {
+  
   if (currentsize[i] != 0)
     {
       for (; hole > 1 && tmp.key < heap[i][hole/2].key; hole /= 2)
@@ -581,8 +586,14 @@ void CHeapArr::percolateup(int hole, heapelement tmp, int i)
 
 void CHeapArr::percolateupordown(int hole, heapelement tmp, int i)
 {
-  if (currentsize != 0)
+    // printf("i %d\n",i);
+  if (currentsize[i] != 0)
     {
+        
+    // if (hole/2 >= currentsize[i] || hole < 0)       //hack
+    // {
+    //         return;
+    // }
       if (hole > 1 && heap[i][hole/2].key > tmp.key)
 		percolateup(hole, tmp, i);
       else
@@ -693,7 +704,10 @@ void CHeapArr::deleteheap(AbstractSearchState *AbstractSearchState, int i)
 {
   if (AbstractSearchState->heapind[i] == 0)
     heaperror("deleteheap: AbstractSearchState is not in heap");
-  percolateupordown(AbstractSearchState->heapind[i], heap[i][currentsize[i]--], i);
+  
+  // if (currentsize[i]>0) //hack
+    percolateupordown(AbstractSearchState->heapind[i], heap[i][currentsize[i]--], i);
+
   AbstractSearchState->heapind[i] = 0;
 }
 
@@ -704,7 +718,9 @@ void CHeapArr::updateheap(AbstractSearchState *AbstractSearchState, CKey NewKey,
   if (heap[i][AbstractSearchState->heapind[i]].key != NewKey)
     {
       heap[i][AbstractSearchState->heapind[i]].key = NewKey;
+
       percolateupordown(AbstractSearchState->heapind[i], heap[i][AbstractSearchState->heapind[i]], i);
+  
     }
 }
 
@@ -783,6 +799,7 @@ CKey CHeapArr::getminkeyheap(int i)
 
 AbstractSearchState* CHeapArr::deleteminheap(int i)
 {
+    // printf("i ammmmmmmmmmmmmmmmmmmmm %d\n", i);
   AbstractSearchState *AbstractSearchState;
 
   if (currentsize[i] == 0)

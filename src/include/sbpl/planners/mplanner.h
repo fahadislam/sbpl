@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Maxim Likhachev
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the University of Pennsylvania nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -53,7 +53,7 @@ enum {
 //---------------------
 
 #define M_INCONS_LIST_ID1 0
-#define M_INCONS_LIST_ID2 1 
+#define M_INCONS_LIST_ID2 1
 
 #include <cstdio>
 #include <ctime>
@@ -81,7 +81,7 @@ typedef class MSEARCHSTATEDATA : public AbstractSearchState
 public:
   /** \brief the MDP state itself
   */
-	CMDPSTATE* MDPstate; 
+	CMDPSTATE* MDPstate;
 	/** \brief M* relevant data
     */
 	unsigned int v[MAX_NUM];
@@ -107,7 +107,7 @@ public:
 	unsigned int costtobestnextstate[MAX_NUM];
 	int h[MAX_NUM];
 public:
-	MSEARCHSTATEDATA() {};	
+	MSEARCHSTATEDATA() {};
 	~MSEARCHSTATEDATA() {};
 } MState;
 
@@ -128,7 +128,7 @@ typedef struct MSEARCHSTATESPACE
 	short unsigned int callnumber;
 	CMDPSTATE* searchgoalstate;
 	CMDPSTATE* searchstartstate;
-    
+
 	CMDP searchMDP;
 
 	bool bReevaluatefvals;
@@ -157,7 +157,8 @@ class MPlanner : public SBPLPlanner
 
 		void costs_changed();
 		void PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int a);
-		int force_planning_from_scratch(); 
+		void CopyOpenList(MSearchStateSpace_t* pSearchStateSpace, int i);	//fahad
+		int force_planning_from_scratch();
 
 		int set_search_mode(bool bSearchUntilFirstSolution);
 
@@ -165,12 +166,12 @@ class MPlanner : public SBPLPlanner
 
 		virtual int get_n_expands() const { return searchexpands; }
 		virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
-		
+
         virtual void set_initialsolution_eps1(double initialsolution_eps) {finitial_eps1 = initialsolution_eps;};
 		virtual void set_initialsolution_eps2(double initialsolution_eps) {finitial_eps2 = initialsolution_eps;};
 
 		void print_searchpath(FILE* fOut);
-		/** \brief constructor 
+		/** \brief constructor
 		 */
 		MPlanner(DiscreteSpaceInformation* e1, int kk, bool bforwardsearch, int
 			planner_type
@@ -196,10 +197,11 @@ class MPlanner : public SBPLPlanner
 		/** \brief returns the final epsilon achieved during the search
 		 */
 		double get_final_epsilon(){return finitial_eps2;};
-		
+
 		bool IsExpanded(int s);
 		int env_num;
-		
+		// int h_best[MAX_NUM];	//fahad
+
 	private:
 
 		//member variables
@@ -289,7 +291,7 @@ class MPlanner : public SBPLPlanner
 		//deallocates memory used by SearchStateSpace
 		void DeleteSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace);
 
-		//debugging 
+		//debugging
 		void PrintSearchState(MState* state, FILE* fOut);
 
 
@@ -317,13 +319,16 @@ class MPlanner : public SBPLPlanner
 
 		int getHeurValue(MSearchStateSpace_t* pSearchStateSpace, int StateID);
 
-		//get path 
+		//get path
 		std::vector<int> GetSearchPath(MSearchStateSpace_t* pSearchStateSpace, int& solcost);
 		//std::vector<int> GetSearchPath_d(MSearchStateSpace_t* pSearchStateSpace, int& solcost);
 
 
 		bool Search(MSearchStateSpace_t* pSearchStateSpace, std::vector<int>& pathIds, int & PathCost, bool bFirstSolution, bool bOptimalSolution, double MaxNumofSecs);
 
+		bool CheckLocalMinimum(MState* state, int i);	//fahad
+
+		MState* GetAttractiveState(MSearchStateSpace_t* pSearchStateSpace, MState* state, int i);
 
 };
 

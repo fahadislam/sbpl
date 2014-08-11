@@ -1,31 +1,31 @@
 /*
-* Copyright (c) 2008, Maxim Likhachev
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the University of Pennsylvania nor the names of its
-* contributors may be used to endorse or promote products derived from
-* this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2008, Maxim Likhachev
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the University of Pennsylvania nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <iostream>
 #include <cmath>
 #include <sbpl/discrete_space_information/environment.h>
@@ -35,7 +35,6 @@
 #include <sbpl/utils/list.h>
 #include <assert.h>
 #include <climits>
-#include <stdio.h>
 
 using namespace std;
 
@@ -59,6 +58,9 @@ MPlanner::MPlanner(DiscreteSpaceInformation* environment, int kk, bool bSearchFo
     searchexpands = 0;
     MaxMemoryCounter = 0;
     m_planner_type = planner_type;
+    // for (int i = 0; i < MAX_NUM; ++i)
+    //     h_best[i] = 0;
+    
 #ifndef ROS
   const char* debug = "debug.txt";
 #endif
@@ -67,23 +69,23 @@ MPlanner::MPlanner(DiscreteSpaceInformation* environment, int kk, bool bSearchFo
     SBPL_ERROR("ERROR: could not open planner debug file\n");
     throw new SBPL_Exception();
   }
-
+    
     pSearchStateSpace_ = new MSearchStateSpace_t;
-
-
+    
+    
     //create the M planner
     if(CreateSearchStateSpace(pSearchStateSpace_) != 1)
         {
             SBPL_ERROR("ERROR: failed to create statespace\n");
             return;
         }
-
+    
     //set the start and goal states
     if(InitializeSearchStateSpace(pSearchStateSpace_) != 1)
         {
             SBPL_ERROR("ERROR: failed to create statespace\n");
             return;
-        }
+        }    
     finitial_eps_planning_time = -1.0;
     final_eps_planning_time = -1.0;
     num_of_expands_initial_solution = 0;
@@ -106,11 +108,11 @@ void MPlanner::Initialize_searchinfo(CMDPSTATE* state, MSearchStateSpace_t* pSea
 
     MState* searchstateinfo = (MState*)state->PlannerSpecificData;
     searchstateinfo->MDPstate = state;
-    InitializeSearchStateInfo(searchstateinfo, pSearchStateSpace);
+    InitializeSearchStateInfo(searchstateinfo, pSearchStateSpace); 
 }
 
 CMDPSTATE* MPlanner::CreateState(int stateID, MSearchStateSpace_t* pSearchStateSpace)
-{
+{   
     CMDPSTATE* state = NULL;
 
 #if DEBUG
@@ -134,7 +136,7 @@ CMDPSTATE* MPlanner::CreateState(int stateID, MSearchStateSpace_t* pSearchStateS
     }
 #endif
     //create search specific info
-    state->PlannerSpecificData = (MState*)malloc(sizeof(MState));
+    state->PlannerSpecificData = (MState*)malloc(sizeof(MState));   
     MaxMemoryCounter += sizeof(MState);
     Initialize_searchinfo(state, pSearchStateSpace);
     return state;
@@ -142,7 +144,7 @@ CMDPSTATE* MPlanner::CreateState(int stateID, MSearchStateSpace_t* pSearchStateS
 }
 
 CMDPSTATE* MPlanner::GetState(int stateID, MSearchStateSpace_t* pSearchStateSpace)
-{
+{   
 
     if(stateID >= (int)environment_->StateID2IndexMapping.size()) // && stateID >= (int)env_d->StateID2IndexMapping.size())
     {
@@ -150,7 +152,7 @@ CMDPSTATE* MPlanner::GetState(int stateID, MSearchStateSpace_t* pSearchStateSpac
         throw new SBPL_Exception();
     }
 
-    if (environment_->StateID2IndexMapping[stateID][MMDP_STATEID2IND] == -1) {
+    if (environment_->StateID2IndexMapping[stateID][MMDP_STATEID2IND] == -1) { 
         return CreateState(stateID, pSearchStateSpace);
         } else {
         CMDPSTATE* pp = pSearchStateSpace->searchMDP.StateArray[environment_->StateID2IndexMapping[stateID][MMDP_STATEID2IND]];
@@ -164,60 +166,52 @@ CMDPSTATE* MPlanner::GetState(int stateID, MSearchStateSpace_t* pSearchStateSpac
 bool MPlanner::IsExpanded (int stateID) {
     //first check that the state exists (to avoid creation of additional states)
     if(environment_->StateID2IndexMapping[stateID][MMDP_STATEID2IND] == -1)
-        return false;
+        return false; 
     CMDPSTATE* state = GetState(stateID, pSearchStateSpace_);
     MState* searchstateinfo = (MState*)state->PlannerSpecificData;
     for (int i =0; i < env_num; i++) {
      if (searchstateinfo->iterationclosed[i] == pSearchStateSpace_->searchiteration)
         return true;
     }
-    return false;
+    return false; 
 }
 
 int MPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, MSearchStateSpace_t* pSearchStateSpace, int i)
 {
     int x, y, h;
-    static int h_best[MAX_NUM]={100000};
-    static int localMinCount[MAX_NUM]={0};
-    int min_size = 3000;
+    int h_best[MAX_NUM]={0};
+    int localMinCount[MAX_NUM]={0};
+
     //compute heuristic for search
     if(bforwardsearch)
     {
         //forward search: heur = distance from state to searchgoal which is Goal MState
-        if (i == 0)
+        if (i == 0) 
            return environment_->GetGoalHeuristic(MDPstate->StateID);
-        else
+        else 
            // return environment_->GetGoalHeuristicNew(MDPstate->StateID, x, y); //Venkat: Please change this interface as suitable
-           // return pSearchStateSpace->eps2*environment_->GetGoalHseuristic(MDPstate->StateID, i);
+           // return pSearchStateSpace->eps2*environment_->GetGoalHeuristic(MDPstate->StateID, i);
         {
-            // if (i == 1)
-                // printf("h_value %d id %d\n", environment_->GetGoalHeuristic(MDPstate->StateID, i), i);
-
+            // if (i == 2)
+            //     printf("h_value %d\n", environment_->GetGoalHeuristic(MDPstate->StateID, i));
             h = environment_->GetGoalHeuristic(MDPstate->StateID, i);
-            if (i<4)
+            if (h < h_best[i])
             {
-
-                if (h < h_best[i])
-                {
-                    localMinCount[i] = 0;
-                    h_best[i] = h;
-                }
-                else
-                    localMinCount[i]++;
-
-
+                localMinCount[i] = 0;
+                h_best[i] = h;
             }
-            // if (i==3)
-            // printf("heuristic %d value %d stateid %d\n", i, environment_->GetGoalHeuristic(MDPstate->StateID, i), MDPstate->StateID);
-         return environment_->GetGoalHeuristic(MDPstate->StateID, i);
+            else
+                localMinCount[i]++;
+            printf("heuristic %d value %d\n", i, h);
+            return environment_->GetGoalHeuristic(MDPstate->StateID, i);
         }
 
     }
     else
     {
-        if (i == 0)
+        if (i == 0) 
             return environment_->GetStartHeuristic(MDPstate->StateID);
-        else
+        else 
             // return pSearchStateSpace->eps2*environment_->GetStartHeuristic(MDPstate->StateID, i); //Venkat: This is just for testing
             return environment_->GetStartHeuristic(MDPstate->StateID, i); //Venkat: This is just for testing
             // return environment_->GetStartHeuristicNew(MDPstate->StateID, x, y); //Venkat: Please change this interface as suitable
@@ -241,8 +235,8 @@ void MPlanner::InitializeSearchStateInfo(MState* state, MSearchStateSpace_t* pSe
         if(pSearchStateSpace->searchgoalstate != NULL) {
             //state->h[i] = ComputeHeuristic1(state->MDPstate, pSearchStateSpace, i);
             state->h[i] = ComputeHeuristic(state->MDPstate, pSearchStateSpace, i);
-        }
-        else {
+        } 
+        else { 
             state->h[i] = 0;
         }
 #else
@@ -272,8 +266,8 @@ void MPlanner::ReInitializeSearchStateInfo(MState* state, MSearchStateSpace_t* p
 #if USE_HEUR
         if(pSearchStateSpace->searchgoalstate != NULL) {
             state->h[i] = ComputeHeuristic(state->MDPstate, pSearchStateSpace, i);
-        }
-        else {
+        } 
+        else { 
             state->h[i] = 0;
         }
 #else
@@ -295,8 +289,8 @@ void MPlanner::ReInitializeSearchStateInfo(MState* state, MSearchStateSpace_t* p
 #if USE_HEUR
     if(pSearchStateSpace->searchgoalstate != NULL) {
         state->h[i] = ComputeHeuristic(state->MDPstate, pSearchStateSpace, i);
-    }
-    else {
+    } 
+    else { 
         state->h[i] = 0;
     }
 #else
@@ -311,7 +305,7 @@ void MPlanner::DeleteSearchStateData(MState* state)
 }
 
 //used for backward search
-//UpdatePreds routine for IMHA*, ith search.
+//UpdatePreds routine for IMHA*, ith search. 
 void MPlanner::UpdatePreds(MState* state, MSearchStateSpace_t* pSearchStateSpace, int i)
 {
     vector<int> PredIDV;
@@ -339,15 +333,15 @@ void MPlanner::UpdatePreds(MState* state, MSearchStateSpace_t* pSearchStateSpace
                 if ((predstate->iterationclosed[i] != pSearchStateSpace->searchiteration) && (predstate->h[i] < INFINITECOST))
                 {
                     int kk = (int)(pSearchStateSpace->eps1*predstate->h[i]);
-                    key.key[0] = predstate->g[i] + kk;
+                    key.key[0] = predstate->g[i] + kk; 
                     if(predstate->heapind[i] != 0)
                         pSearchStateSpace->heap->updateheap(predstate,key,i);
                     else
                         pSearchStateSpace->heap->insertheap(predstate,key,i);
 
                 } /*else if(predstate->listel[i] == NULL) {
-pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
-}*/
+                    pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
+                    }*/
             }
         } else {
               if(predstate->g[i] > state->g[i] + CostV[pind])
@@ -359,22 +353,22 @@ pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
                 if ((predstate->iterationclosed[i] != pSearchStateSpace->searchiteration) && (predstate->h[i] < INFINITECOST))
                 {
                     int kk = (int)(pSearchStateSpace->eps1*predstate->h[i]);
-                    key.key[0] = predstate->g[i] + kk;
+                    key.key[0] = predstate->g[i] + kk; 
                     if(predstate->heapind[i] != 0)
                         pSearchStateSpace->heap->updateheap(predstate,key,i);
                     else
                         pSearchStateSpace->heap->insertheap(predstate,key,i);
 
                 } /*else if(predstate->listel[i] == NULL) {
-pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
-}*/
+                    pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
+                    }*/
             }
 
 
 
         }
         //take care of incons list
-
+        
     } //for predecessors
 }
 /* UpdateSuccs routine for IMHA* */
@@ -393,12 +387,12 @@ void MPlanner::UpdateSuccs(MState* state, MSearchStateSpace_t* pSearchStateSpace
         if(predstate->callnumberaccessed[i] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace, i);
         }
-        //environment_->PrintState(predstate->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+        //environment_->PrintState(predstate->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
         //see if we can improve the value of predstate
         if (i == 0) {
             if(predstate->g[i] > state->g[i] + CostV[pind])
             {
-                //print("State %d --
+                //print("State %d -- 
                 predstate->g[i] = state->g[i] + CostV[pind];
                 //predstate->bestnextstate[i] = state->MDPstate;
                 predstate->bestpredstate[i] = state->MDPstate;
@@ -407,20 +401,20 @@ void MPlanner::UpdateSuccs(MState* state, MSearchStateSpace_t* pSearchStateSpace
                 if ((predstate->iterationclosed[i] != pSearchStateSpace->searchiteration) && (predstate->h[i] < INFINITECOST))
                 {
                     int kk = (int)(pSearchStateSpace->eps1*predstate->h[i]);
-                    key.key[0] = predstate->g[i] + kk;
+                    key.key[0] = predstate->g[i] + kk; 
                     if(predstate->heapind[i] != 0)
                         pSearchStateSpace->heap->updateheap(predstate,key,i);
                     else
                         pSearchStateSpace->heap->insertheap(predstate,key,i);
 
                 } /*else if(predstate->listel[i] == NULL) {
-pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
-}*/
+                    pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
+                    }*/
             }
         } else {
             if(predstate->g[i] > state->g[i] + CostV[pind])
             {
-                //print("State %d --
+                //print("State %d -- 
                 predstate->g[i] = state->g[i] + CostV[pind];
                 //predstate->bestnextstate[i] = state->MDPstate;
                 predstate->bestpredstate[i] = state->MDPstate;
@@ -430,15 +424,15 @@ pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
                 {
                     // int kk = (int)(pSearchStateSpace->eps2*pSearchStateSpace->eps1*predstate->h[i]);
                     int kk = (int)(pSearchStateSpace->eps1*predstate->h[i]);
-                    key.key[0] = predstate->g[i] + kk;
+                    key.key[0] = predstate->g[i] + kk; 
                     if(predstate->heapind[i] != 0)
                         pSearchStateSpace->heap->updateheap(predstate,key,i);
                     else
                         pSearchStateSpace->heap->insertheap(predstate,key,i);
 
                 } /*else if(predstate->listel[i] == NULL) {
-pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
-}*/
+                    pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
+                    }*/
             }
 
 
@@ -464,14 +458,14 @@ void MPlanner::UpdatePredsEES(MState* state, MSearchStateSpace_t* pSearchStateSp
         if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
         }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
             predstate->g[0] = state->g[0] + CostV[pind];
             predstate->bestnextstate[0] = state->MDPstate;
             predstate->costtobestnextstate[0] = CostV[pind];
-            //insert/update into heaps
+            //insert/update into heaps 
             //admissible heap
             int kk = predstate->g[0] + (int)(predstate->h[0]);
             key.key[0] = kk;
@@ -480,7 +474,7 @@ void MPlanner::UpdatePredsEES(MState* state, MSearchStateSpace_t* pSearchStateSp
             else
                 pSearchStateSpace->heap->insertheap(predstate,key,0);
 
-            //inadmissible heap 1
+            //inadmissible heap 1 
             kk = predstate->g[0] + (int)(predstate->h[1]);
             key.key[0] = kk;
             if(predstate->heapind[1] != 0)
@@ -494,7 +488,7 @@ void MPlanner::UpdatePredsEES(MState* state, MSearchStateSpace_t* pSearchStateSp
                 pSearchStateSpace->heap->updateheap(predstate,key,2);
             else
                 pSearchStateSpace->heap->insertheap(predstate,key,2);
-        }
+        }   
     } //for predecessors
 }
 
@@ -512,11 +506,11 @@ void MPlanner::UpdateSuccsMPWA(MState* state, MSearchStateSpace_t* pSearchStateS
         if(predstate->callnumberaccessed[i] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace, i);
         }
-        //environment_->PrintState(predstate->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+        //environment_->PrintState(predstate->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
         //see if we can improve the value of predstate
         if(predstate->g[i] > state->g[i] + CostV[pind])
         {
-            //print("State %d --
+            //print("State %d -- 
             predstate->g[i] = state->g[i] + CostV[pind];
             //predstate->bestnextstate[i] = state->MDPstate;
             predstate->bestpredstate[i] = state->MDPstate;
@@ -525,15 +519,15 @@ void MPlanner::UpdateSuccsMPWA(MState* state, MSearchStateSpace_t* pSearchStateS
             if ((predstate->iterationclosed[i] != pSearchStateSpace->searchiteration) && (predstate->h[i] < INFINITECOST))
             {
                 int kk = (int)(predstate->h[i]);
-                key.key[0] = predstate->g[i] + kk;
+                key.key[0] = predstate->g[i] + kk; 
                 if(predstate->heapind[i] != 0)
                     pSearchStateSpace->heap->updateheap(predstate,key,i);
                 else
                     pSearchStateSpace->heap->insertheap(predstate,key,i);
 
             } /*else if(predstate->listel[i] == NULL) {
-pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
-}*/
+                pSearchStateSpace->inconslist[i]->insert_mult(predstate, i);
+                }*/
         }
 
     } //for predecessors
@@ -554,7 +548,7 @@ void MPlanner::UpdateSuccsEES (MState* state, MSearchStateSpace_t* pSearchStateS
         if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
                 }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
@@ -569,7 +563,7 @@ void MPlanner::UpdateSuccsEES (MState* state, MSearchStateSpace_t* pSearchStateS
             else
                 pSearchStateSpace->heap->insertheap(predstate,key,0);
 
-            //inadmissible heap 1
+            //inadmissible heap 1 
             kk = predstate->g[0] + (int)(predstate->h[1]);
             key.key[0] = kk;
             if(predstate->heapind[1] != 0)
@@ -585,7 +579,7 @@ void MPlanner::UpdateSuccsEES (MState* state, MSearchStateSpace_t* pSearchStateS
             else
                 pSearchStateSpace->heap->insertheap(predstate,key,2);
 
-        }
+        }   
     } //for successors
 }
 
@@ -604,7 +598,7 @@ void MPlanner::UpdatePredsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
         if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
         }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
@@ -621,10 +615,10 @@ void MPlanner::UpdatePredsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
                                 pSearchStateSpace->heap->updateheap(predstate,key,ii);
                             else
                                 pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                        }
+                        } 
                     }
                 }
-            } else {
+            } else {    
                 for (int ii = 0; ii < env_num; ii++) {
                     if ( predstate->h[ii] < INFINITECOST) {
                         int kk = predstate->h[ii];
@@ -632,11 +626,11 @@ void MPlanner::UpdatePredsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
                             pSearchStateSpace->heap->updateheap(predstate,key,ii);
                         else
                             pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                    }
+                    } 
                 }
-            }
+            } 
             //take care of incons list
-        }
+        }   
     } //for predecessors
 }
 
@@ -656,7 +650,7 @@ bool MPlanner::UpdateSuccsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
         if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
         }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
@@ -664,7 +658,7 @@ bool MPlanner::UpdateSuccsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
             //predstate->bestnextstate[0] = state->MDPstate;
             predstate->bestpredstate[0] = state->MDPstate;
             //predstate->costtobestnextstate[0] = CostV[pind];
-
+            
             // Stop here if the state generated is a goal.
             if (PredIDV[pind] == pSearchStateSpace->searchgoalstate->StateID){
                 printf("FOUND A GOAL STATE: %d\n", PredIDV[pind]);
@@ -682,10 +676,10 @@ bool MPlanner::UpdateSuccsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
                                 pSearchStateSpace->heap->updateheap(predstate,key,ii);
                             else
                                 pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                        }
+                        } 
                     }
                 }
-            } else {
+            } else {    
                 for (int ii = 0; ii < env_num; ii++) {
                     if ( predstate->h[ii] < INFINITECOST) {
                         key.key[0] = predstate->h[ii];
@@ -694,11 +688,11 @@ bool MPlanner::UpdateSuccsMHG(MState* state, MSearchStateSpace_t* pSearchStateSp
                             pSearchStateSpace->heap->updateheap(predstate,key,ii);
                         else
                             pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                    }
+                    } 
                 }
-            }
+            } 
             //take care of incons list
-        }
+        }   
     } //for successors
     return false;
 }
@@ -720,7 +714,7 @@ void MPlanner::UpdatePredsShared(MState* state, MSearchStateSpace_t* pSearchStat
         if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
                 }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
             if(predstate->g[0] > state->g[0] + CostV[pind])
             {
@@ -744,13 +738,13 @@ void MPlanner::UpdatePredsShared(MState* state, MSearchStateSpace_t* pSearchStat
                     else
                         pSearchStateSpace->heap->insertheap(predstate,key,0);
                 } else if ((predstate->iterationclosed[0] != pSearchStateSpace->searchiteration) && (predstate->h[0] < INFINITECOST)) {
-                    //NOT EXPANDED IN ANCHOR OR ANY OTHER
+                    //NOT EXPANDED IN ANCHOR OR ANY OTHER 
                     int anchor = predstate->g[0] + (int)(pSearchStateSpace->eps1*predstate->h[0]);
                     //int anchor = predstate->g[0] + (int)(eps_1[0]*predstate->h[0]);
                     for (int ii = 0; ii < env_num; ii++) {
                         if ( predstate->h[ii] < INFINITECOST) {
                                 int kk = predstate->g[0] + (int)(pSearchStateSpace->eps1*predstate->h[ii]);
-                            if (ii != 0)
+                            if (ii != 0) 
                                 kk = predstate->g[0] + (int)(pSearchStateSpace->eps1*predstate->h[ii]);
                             if (kk < pSearchStateSpace->eps2*anchor) {
                                 key.key[0] = kk;
@@ -758,12 +752,12 @@ void MPlanner::UpdatePredsShared(MState* state, MSearchStateSpace_t* pSearchStat
                                     pSearchStateSpace->heap->updateheap(predstate,key,ii);
                                 else
                                     pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                            }
+                            } 
                         }
                     }
-                }
+                } 
                 //take care of incons list
-        }
+        }   
     } //for predecessors
 }
 
@@ -773,11 +767,9 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
     vector<int> CostV;
     CKey key;
     MState *predstate;
-
     environment_->GetSuccs(state->MDPstate->StateID, &PredIDV, &CostV, i);
     // printf("(Size of predIDV : %d)\n", PredIDV.size());
     //iterate through predecessors of s
-
     for(int pind = 0; pind < (int)PredIDV.size(); pind++)
     {
         CMDPSTATE* PredMDPState = GetState(PredIDV[pind], pSearchStateSpace);
@@ -787,12 +779,10 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
             printf("(ASSERT SUPPOSED TO FAIL)\n");
             ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
         }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
+        //printf("State [%d] = %d\n",pind, PredMDPState->StateID); 
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
-            // if (i==4)
-            //     getchar();
             predstate->g[0] = state->g[0] + CostV[pind];
             //predstate->bestnextstate[0] = state->MDPstate;
             predstate->bestpredstate[0] = state->MDPstate;
@@ -805,8 +795,7 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
                         pSearchStateSpace->heap->deleteheap(predstate,ii); //,ii);
                 }
 
-            }
-            else if ((predstate->iterationclosed[1] != pSearchStateSpace->searchiteration)&& (predstate->iterationclosed[0] == pSearchStateSpace->searchiteration) && (predstate->h[0] < INFINITECOST)) {
+            } else if ((predstate->iterationclosed[1] != pSearchStateSpace->searchiteration)&& (predstate->iterationclosed[0] == pSearchStateSpace->searchiteration) && (predstate->h[0] < INFINITECOST)) {
                 //NOT EXPANDED IN ANCHOR, BUT EXPANDED IN INAD, ONLY PUT IN ANCHOR
                 // (INT_MAX/predstate->h[0] <= pSearchStateSpace->eps1)?
                 int anchor = predstate->g[0];
@@ -820,9 +809,8 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
                     pSearchStateSpace->heap->updateheap(predstate,key,0);
                 else
                     pSearchStateSpace->heap->insertheap(predstate,key,0);
-            }
-             else if ((predstate->iterationclosed[0] != pSearchStateSpace->searchiteration) && (predstate->h[0] < INFINITECOST)) {
-                //NOT EXPANDED IN ANCHOR OR ANY OTHER
+            } else if ((predstate->iterationclosed[0] != pSearchStateSpace->searchiteration) && (predstate->h[0] < INFINITECOST)) {
+                //NOT EXPANDED IN ANCHOR OR ANY OTHER 
                 int anchor = predstate->g[0];// + (int)(pSearchStateSpace->eps1*predstate->h[0]);
                 if(INT_MAX/(predstate->h[0]==0?1:predstate->h[0]) >= pSearchStateSpace->eps1)
                     anchor += pSearchStateSpace->eps1*predstate->h[0];
@@ -838,24 +826,23 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
                         else
                             kk += INFINITECOST;
                         // printf("State: %d kk: %d, heap: %d\n", PredIDV[pind],
-                        // kk, ii);
-
+                        //     kk, ii);
+                        
                         // if (ii != 0) {
-                        // kk = predstate->g[0];// + (int)(pSearchStateSpace->eps1*predstate->h[ii]);
+                        //  kk = predstate->g[0];// + (int)(pSearchStateSpace->eps1*predstate->h[ii]);
                         // }
-
                         if (kk < pSearchStateSpace->eps2*anchor) {
                             key.key[0] = kk;
                             if(predstate->heapind[ii] != 0)
                                 pSearchStateSpace->heap->updateheap(predstate,key,ii);
                             else
                                 pSearchStateSpace->heap->insertheap(predstate,key,ii);
-                        }
+                        } 
                     }
                 }
-            }
+            } 
             //take care of incons list
-        }
+        }   
     } //for successors
 }
 
@@ -868,42 +855,6 @@ int MPlanner::GetGVal(int StateID, MSearchStateSpace_t* pSearchStateSpace)
      return state->g[0];
 }
 
-void MPlanner::CopyOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
-{
-    MState *state;
-    CKey key;
-    CHeapArr* pheap = pSearchStateSpace->heap;
-    vector<MState*> general;
-    // printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
-    while(!pheap->emptyheap(i)) {
-        //get the state
-        state = (MState*)pheap->deleteminheap(i);
-        // PrintSearchState(state, stdout);
-        general.push_back(state);
-        //printf("what \n");
-    } //assert(pheap->emptyheap());
-    //move incons into open
-    env_num++;
-    for (int pp =0; pp < (int) general.size(); pp++)
-    {
-        state = general[pp];
-        //compute f-value
-        // printf("g %d h %d\n", state->g[0], environment_->GetGoalHeuristic(state->MDPstate->StateID, env_num-1));
-
-        key.key[0] = state->g[0] + pSearchStateSpace->eps1*environment_->GetGoalHeuristic(state->MDPstate->StateID, env_num-1);
-        // getchar();
-        //insert into OPEN
-        // printf("ind is %d\n",state->heapind[i]);
-        // printf("heap size %d\n", pSearchStateSpace->heap->currentsize[env_num-1]);
-
-        state->heapind[env_num-1]=0;
-        pSearchStateSpace->heap->insertheap(state,key,env_num-1);
-        //should never happen, but sometimes it does - somewhere there is a bug TODO
-        //remove from INCONS
-    }
-
-}
-
 void MPlanner::PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
 {
     MState *state;
@@ -912,20 +863,20 @@ void MPlanner::PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
     vector<MState*> general;
     printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
     while(!pheap->emptyheap(i)) {
-        //get the state
+        //get the state     
         state = (MState*)pheap->deleteminheap(i);
         PrintSearchState(state, stdout);
         general.push_back(state);
         //printf("what \n");
-    } //assert(pheap->emptyheap());
+    }       //assert(pheap->emptyheap());
     //move incons into open
-    for (int pp =0; pp < (int) general.size(); pp++)
+    for (int pp =0; pp < (int) general.size(); pp++)  
     {
         state = general[pp];
         //compute f-value
-        if (i > 0)
+        if (i > 0)  
             key.key[0] = state->g[i] + (int)(pSearchStateSpace->eps1*state->h[i]);
-        else
+        else 
             key.key[0] = state->g[i] + (int)(pSearchStateSpace->eps1*state->h[i]);
         //insert into OPEN
         if(state->heapind[i] == 0)
@@ -938,7 +889,7 @@ void MPlanner::PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
 
 }
 
-//IMHA*
+//IMHA* 
 int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
     int expands;
@@ -966,17 +917,17 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
         goalkey[ii].key[0] = searchgoalstate->g[ii];
     }
     bool hush = false;
-    if (env_num == 1) { //No multiple heuristics. Mainly for debug purpose.
+    if (env_num == 1)  { //No multiple heuristics. Mainly for debug purpose.
         int ii = 0;
         minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
         while (!pSearchStateSpace->heap->emptyheap(ii) && minkey[ii].key[0] < INFINITECOST) {
             if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                 conv = ii;
-                hush = true;
+                hush = true; 
                 break;
-            }
+            } 
             state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
+            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) { 
                 state->v[ii] = state->g[ii];
                 state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
                 expands++;
@@ -985,9 +936,9 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
                     UpdatePreds(state, pSearchStateSpace, ii);
                 else
                     UpdateSuccs(state, pSearchStateSpace, ii);
-                if (_mstate_print) {
+                if (_mstate_print) { 
                     SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                 }
                 expand_s[ii]++;
             }
@@ -1000,24 +951,24 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
             }
         }
     } else {
-        assert(env_num > 1);
-            mink = pSearchStateSpace->heap->getminkeyheap(0);
+        assert(env_num > 1); 
+            mink = pSearchStateSpace->heap->getminkeyheap(0);   
         while (!pSearchStateSpace->heap->emptyheap(0) && mink.key[0] < INFINITECOST && (clock() - TimeStarted) < double(CLOCKS_PER_SEC)* MaxNumofSecs) {
             bool subopt = false;
-            //Number of environments
+            //Number of environments 
             // printf("Mink0: %ld\t eps2*mink: %f\t Exp0: %d", mink.key[0], pSearchStateSpace->eps2*mink.key[0],
              // expand_s[0]);
-            for (int ii = 1; ii < env_num; ii++) {
+            for (int ii = 1; ii < env_num; ii++) {  
                 //First expansion
                 minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
                 if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                     conv = ii;
-                    hush = true;
+                    hush = true; 
                     break;
                 }
                 // printf("\t Mink%d : %ld;\t Exp%d: %d", ii, minkey[ii].key[0], ii, expand_s[ii]);
                 // if(ii == env_num-1)
-                // printf("\n");
+                //  printf("\n");
                 if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST)) {
                     state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
                     if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
@@ -1026,15 +977,15 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
                         state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
                         expands++;
                         // printf("env: %d\t mink: %d\t g:%d\th:%d\t\n", ii, minkey[ii].key[0],
-                        // state->g[ii], state->h[ii]);
+                        //     state->g[ii], state->h[ii]);
                         state->numofexpands++;
                         if (bforwardsearch == false)
                             UpdatePreds(state, pSearchStateSpace, ii);
                         else
                             UpdateSuccs(state, pSearchStateSpace, ii);
-                        if (_mstate_print) {
+                        if (_mstate_print) { 
                             SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                            // environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                            // environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                             SBPL_FPRINTF(stdout, "\n");
                         }
                         expand_s[ii]++;
@@ -1050,11 +1001,11 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
                     minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
                     if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                         conv = ii;
-                        hush = true;
+                        hush = true; 
                         break;
-                    }
+                    } 
                     state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-                    if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
+                    if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) { 
                         state->v[ii] = state->g[ii];
                         state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
                         expands++;
@@ -1063,9 +1014,9 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
                             UpdatePreds(state, pSearchStateSpace, ii);
                         else
                             UpdateSuccs(state, pSearchStateSpace, ii);
-                        if (_mstate_print) {
+                        if (_mstate_print) { 
                             SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                         }
                         expand_s[ii]++;
                     }
@@ -1073,7 +1024,7 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
                     mink = pSearchStateSpace->heap->getminkeyheap(ii); // anchor heap changes
                 }
             }
-            if (hush)
+            if (hush) 
                 break;
             if(expands%100000 == 0 && expands > 0)
             {
@@ -1086,7 +1037,7 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
     if (hush) {
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
-            printf("search[%d] expands= %d\n", ii, expand_s[ii]);
+            printf("search[%d] expands= %d\n", ii, expand_s[ii]); 
         }
     } else {
         printf("Got no solution\n");
@@ -1098,10 +1049,10 @@ int MPlanner::ImprovePathRoundRobin(MSearchStateSpace_t* pSearchStateSpace, doub
 
     searchexpands += expands;
 
-    return retv;
+    return retv;        
 }
 
-//MPWA*
+//MPWA* 
 int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
     int expands;
@@ -1129,18 +1080,18 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
         goalkey[ii].key[0] = searchgoalstate->g[ii];
     }
     bool hush = false;
-    if (env_num == 1) { //No multiple heuristics. Mainly for debug purpose.
+    if (env_num == 1)  { //No multiple heuristics. Mainly for debug purpose.
         printf("The number of environments is 1.\n");
         int ii = 0;
         minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
         while (!pSearchStateSpace->heap->emptyheap(ii) && minkey[ii].key[0] < INFINITECOST) {
             if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                 conv = ii;
-                hush = true;
+                hush = true; 
                 break;
-            }
+            } 
             state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
+            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) { 
                 state->v[ii] = state->g[ii];
                 state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
                 expands++;
@@ -1149,9 +1100,9 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
                     UpdatePreds(state, pSearchStateSpace, ii);
                 else
                     UpdateSuccs(state, pSearchStateSpace, ii);
-                if (_mstate_print) {
+                if (_mstate_print) { 
                     SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                 }
                 expand_s[ii]++;
             }
@@ -1186,25 +1137,25 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
             }
 
             bool subopt = false;
-            //Number of environments
+            //Number of environments 
             // printf("Mink0: %ld\t eps2*mink: %f\t Exp0: %d", mink.key[0], pSearchStateSpace->eps2*mink.key[0],
-            // expand_s[0]);
-            for (int ii = 0; ii < env_num; ii++) {
+            //  expand_s[0]);
+            for (int ii = 0; ii < env_num; ii++) {  
                 //First expansion
                 minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
                 if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                     conv = ii;
-                    hush = true;
+                    hush = true; 
                     break;
                 }
                 // printf("\t Mink%d : %ld;\t Exp%d: %d", ii, minkey[ii].key[0], ii, expand_s[ii]);
                 // if(ii == env_num-1)
-                // printf("\n");
+                //  printf("\n");
                 if (pSearchStateSpace->heap->emptyheap(ii)){
                     continue;
                 }
                 state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-                if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
+                if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) { 
                     state->v[ii] = state->g[ii];
                     state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
                     expands++;
@@ -1213,9 +1164,9 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
                         UpdatePreds(state, pSearchStateSpace, ii);
                     else
                         UpdateSuccsMPWA(state, pSearchStateSpace, ii);
-                    if (_mstate_print) {
+                    if (_mstate_print) { 
                         SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                        environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                        environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                     }
                     expand_s[ii]++;
                 } else {
@@ -1226,7 +1177,7 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
                 goalkey[ii].key[0] = searchgoalstate->g[ii];
                 minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii); //minkey changes
             }
-            if (hush)
+            if (hush) 
                 break;
             if(expands%100000 == 0 && expands > 0)
             {
@@ -1239,7 +1190,7 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
     if (hush) {
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
-            printf("search[%d] expands= %d\n", ii, expand_s[ii]);
+            printf("search[%d] expands= %d\n", ii, expand_s[ii]); 
         }
     } else {
         printf("Got no solution\n");
@@ -1251,7 +1202,7 @@ int MPlanner::ImprovePathMPWA(MSearchStateSpace_t* pSearchStateSpace, double Max
 
     searchexpands += expands;
 
-    return retv;
+    return retv;        
 }
 
 //EES
@@ -1264,7 +1215,7 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
     CKey goalkey[MAX_NUM],minkey[MAX_NUM];
     expands = 0;
 
-    printf("IN IMPROVEPATH EES -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
+    printf("IN IMPROVEPATH EES  -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
 
     printf("[EES] Going to try finding a solution for the next %f seconds\n", MaxNumofSecs - (clock() - TimeStarted)/double(CLOCKS_PER_SEC));
 
@@ -1274,9 +1225,9 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
     }
     //goal state
     searchgoalstate = (MState*)(pSearchStateSpace->searchgoalstate->PlannerSpecificData);
-    env_num = 3; //EES has three heuristics not a variable
+    env_num = 3; //EES has three heuristics not a variable 
 
-    //We assume h_0 = admissible heuristic, h_1 = inadmissible heuristic and h_2 = distance heuristic
+    //We assume h_0 = admissible heuristic, h_1 = inadmissible heuristic and h_2 = distance heuristic 
 
 
     for (int ii =0; ii < env_num; ii++) {
@@ -1291,28 +1242,28 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
         goalkey[ii].key[0] = searchgoalstate->g[0];
     }
     bool hush = false;
-    mink = pSearchStateSpace->heap->getminkeyheap(0);
+    mink = pSearchStateSpace->heap->getminkeyheap(0);   
     float W = pSearchStateSpace->eps2*pSearchStateSpace->eps1; //W is the bound
     while (!pSearchStateSpace->heap->emptyheap(0) && mink.key[0] < INFINITECOST && (clock() - TimeStarted) < MaxNumofSecs*double(CLOCKS_PER_SEC)) {
-        //First check Q2 (distance heuristic)
+        //First check Q2 (distance heuristic) 
         // printf("Expand0: %d\t Expand1: %d\t Expand2: %d\n", expand_s[0],
-        // expand_s[1], expand_s[2]);
-        float f_inad2 = INFINITECOST;
+        //     expand_s[1], expand_s[2]);
+        float f_inad2 = INFINITECOST; 
         minkey[2] = pSearchStateSpace->heap->getminkeyheap(2);
         if (minkey[2].key[0] < INFINITECOST) {
             state = (MState*) pSearchStateSpace->heap->deleteminheap(2);
-            f_inad2= state->g[0] + state->h[1]; //h_1 is inad heuristic
+            f_inad2= state->g[0] + state->h[1]; //h_1 is inad heuristic 
         }
         if (f_inad2 <= W*mink.key[0]) {
             //Expand from q2
             // if (state == searchgoalstate) {
-            // conv = 0;
-            // hush = true;
-            // break;
+            //     conv = 0;
+            //     hush = true; 
+            //     break;
             // }
             if (f_inad2 >= goalkey[1].key[0] && goalkey[1].key[0] < INFINITECOST) {
                 conv = 0;
-                hush = true;
+                hush = true; 
                 break;
             }
             expands++;
@@ -1326,15 +1277,15 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
                 if(state->heapind[iii] != 0)
                     pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
                 minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
-            }
+            }   
         } else {
             minkey[1] = pSearchStateSpace->heap->getminkeyheap(1);
-            if (minkey[1].key[0] <= W*mink.key[0]) { //Second check
+            if (minkey[1].key[0] <= W*mink.key[0]) { //Second check 
                 if (minkey[1] >= goalkey[1] && goalkey[1].key[0] < INFINITECOST) {
                     conv = 0;
-                    hush = true;
+                    hush = true; 
                     break;
-                }
+                } 
                 state = (MState*) pSearchStateSpace->heap->deleteminheap(1);
                 expands++;
                 expand_s[1]++;
@@ -1347,13 +1298,13 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
                         pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
                     minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
                 }
-            } else { //final case, admissible search
+            } else { //final case, admissible search 
                 minkey[0] = pSearchStateSpace->heap->getminkeyheap(0);
                 if (minkey[0] >= goalkey[0] && goalkey[0].key[0] < INFINITECOST) {
                     conv = 0;
-                    hush = true;
+                    hush = true; 
                     break;
-                }
+                } 
                 if (minkey[0].key[0] < INFINITECOST) {
                     state = (MState*) pSearchStateSpace->heap->deleteminheap(0);
                     expands++;
@@ -1368,12 +1319,12 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
                         minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
                     }
                 }
-            }
+            } 
         }
         goalkey[0].key[0] = searchgoalstate->g[0];
         goalkey[1].key[0] = searchgoalstate->g[0];
-        mink = pSearchStateSpace->heap->getminkeyheap(0);
-        if (hush)
+        mink = pSearchStateSpace->heap->getminkeyheap(0);   
+        if (hush) 
             break;
         if(expands%100000 == 0 && expands > 0)
             SBPL_PRINTF("expands so far=%u\n", expands);
@@ -1385,7 +1336,7 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
     if (hush) {
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
-            printf("search[%d] expands= %d\n", ii, expand_s[ii]);
+            printf("search[%d] expands= %d\n", ii, expand_s[ii]); 
         }
         conv = 0;
     } else {
@@ -1395,7 +1346,7 @@ int MPlanner::ImprovePathEES (MSearchStateSpace_t* pSearchStateSpace, double Max
     }
     //SBPL_FPRINTF(fDeb, "expanded=%d\n", expands);
     searchexpands += expands;
-    return retv;
+    return retv;        
 }
 
 int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
@@ -1406,11 +1357,11 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
     int minin = -1;
     CKey goalkey[MAX_NUM],minkey[MAX_NUM];
     expands = 0;
-
-    printf("IN IMPROVEPATH MHGBFS -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
-
+    
+    printf("IN IMPROVEPATH MHGBFS  -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
+    
     printf("[MHGBFS] Going to try finding a solution for the next %f seconds\n", MaxNumofSecs - (clock() - TimeStarted)/double(CLOCKS_PER_SEC));
-
+    
     if (pSearchStateSpace->searchgoalstate == NULL) {
         SBPL_ERROR("ERROR searching: no goal state is set\n");
         throw new SBPL_Exception();
@@ -1429,33 +1380,33 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
         goalkey[ii].key[0] = searchgoalstate->g[0];
     }
     bool hush = false;
-    assert(env_num > 1);
-    mink = pSearchStateSpace->heap->getminkeyheap(0);
+    assert(env_num > 1); 
+    mink = pSearchStateSpace->heap->getminkeyheap(0);   
 
     while (!pSearchStateSpace->heap->emptyheap(0) && mink.key[0] < INFINITECOST && (clock() - TimeStarted) < MaxNumofSecs*double(CLOCKS_PER_SEC)) {
         bool subopt = false;
-        //Number of environments
-        for (int ii = 0; ii < env_num; ii++) {
+        //Number of environments 
+        for (int ii = 0; ii < env_num; ii++) {  
             minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
             // printf("\t Mink%d : %ld;\t Exp%d: %d", ii, minkey[ii].key[0], ii, expand_s[ii]);
             // if(ii == env_num-1)
-            // printf("\n");
+            //     printf("\n");
             // printf("Goal key0: %d;\t goalkey1: %d \t minkey0: %d \t minkey1: %d\n", goalkey[ii].key[0],
-            // goalkey[ii].key[1],
-            // minkey[ii].key[0],
-            // minkey[ii].key[1]);
+            //     goalkey[ii].key[1],
+            //     minkey[ii].key[0],
+            //     minkey[ii].key[1]);
             // if (minkey[ii] >= goalkey[ii] && goalkey[ii].key[0] < INFINITECOST) {
             state = (MState*) pSearchStateSpace->heap->getminheap(ii);
             // printf("state g: %d;\t minkey0 : %d;\t minkey1 : %d\n", state->g[0],
-            // minkey[ii].key[0], minkey[ii].key[1]);
+            //     minkey[ii].key[0], minkey[ii].key[1]);
 
             // TODO(Sid) : Needs to be changed to stop when you generate a goal
             // state.
             if (state->g[0] >= goalkey[ii].key[0] && goalkey[ii].key[0] < INFINITECOST) {
                 conv = ii;
-                hush = true;
+                hush = true; 
                 break;
-            }
+            } 
             if (minkey[ii].key[0] < INFINITECOST) {
                 //printf("From ii = %d\n", ii);
                 state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
@@ -1480,10 +1431,10 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
                         pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
                     minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
                     goalkey[iii].key[0] = searchgoalstate->g[0];
-                }
+                }   
             }
         }
-        if (hush)
+        if (hush) 
             break;
         if(expands%100000 == 0 && expands > 0)
             SBPL_PRINTF("expands so far=%u\n", expands);
@@ -1495,7 +1446,7 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
     if (hush) {
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
-            printf("search[%d] expands= %d\n", ii, expand_s[ii]);
+            printf("search[%d] expands= %d\n", ii, expand_s[ii]); 
         }
         conv = 0;
     } else {
@@ -1505,33 +1456,30 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
     }
     //SBPL_FPRINTF(fDeb, "expanded=%d\n", expands);
     searchexpands += expands;
-    return retv;
+    return retv;        
 
 }
 
 
-//SMHA*
+//SMHA* 
 int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
     int expands;
-    MState *state, *searchgoalstate, *laststate;
+    MState *state, *searchgoalstate;
     CKey key, mink, minkey2;
     int minin = -1;
     CKey goalkey[MAX_NUM],minkey[MAX_NUM];
     expands = 0;
-
-    bool inlocalmin = false;  //fahad
-
-    printf("IN IMPROVEPATH SHARED -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
-
+    
+    printf("IN IMPROVEPATH SHARED  -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
+    
     printf("[MHA] Going to try finding a solution for the next %f seconds\n", MaxNumofSecs - (clock() - TimeStarted)/double(CLOCKS_PER_SEC));
-
+    
     if (pSearchStateSpace->searchgoalstate == NULL) {
         SBPL_ERROR("ERROR searching: no goal state is set\n");
         throw new SBPL_Exception();
     }
     //goal state
-    //to be fixed
     searchgoalstate = (MState*)(pSearchStateSpace->searchgoalstate->PlannerSpecificData);
     for (int ii =0; ii < MAX_NUM; ii++) {
         if (searchgoalstate->callnumberaccessed[ii] != pSearchStateSpace->callnumber) {
@@ -1545,28 +1493,28 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
         goalkey[ii].key[0] = searchgoalstate->g[0];
     }
     bool hush = false;
-    if (env_num == 1) { //No multiple heuristics. Mainly for debug purpose.
+    if (env_num == 1)  { //No multiple heuristics. Mainly for debug purpose.
         int ii = 0;
         minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
         while (!pSearchStateSpace->heap->emptyheap(ii) && minkey[ii].key[0] < INFINITECOST && (clock() - TimeStarted) < MaxNumofSecs*double(CLOCKS_PER_SEC)) {
             if ((minkey[ii] >= goalkey[ii]) && (minkey[ii].key[0] < INFINITECOST)) {
                 conv = ii;
-                hush = true;
+                hush = true; 
                 break;
-            }
+            } 
             state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) {
+            if (state->iterationclosed[ii] != pSearchStateSpace->searchiteration) { 
                 state->v[ii] = state->g[ii];
                 state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
-                expands++;
+                expands++;            
                 state->numofexpands++;
                 if (bforwardsearch == false)
                     UpdatePreds(state, pSearchStateSpace, ii);
                 else
                     UpdateSuccs(state, pSearchStateSpace, ii);
-                if (_mstate_print) {
+                if (_mstate_print) { 
                     SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                    environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                 }
                 expand_s[ii]++;
             }
@@ -1579,20 +1527,20 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
             }
         }
     } else {
-        assert(env_num > 1);
-        mink = pSearchStateSpace->heap->getminkeyheap(0);
+        assert(env_num > 1); 
+        mink = pSearchStateSpace->heap->getminkeyheap(0);   
 
         while (!pSearchStateSpace->heap->emptyheap(0) && mink.key[0] < INFINITECOST && (clock() - TimeStarted) < MaxNumofSecs*double(CLOCKS_PER_SEC)) {
             bool subopt = false;
 
             /** debug */
             // printf("Mink0: %ld\t eps2*mink: %f\t Exp0: %d", mink.key[0], pSearchStateSpace->eps2*mink.key[0],
-            // expand_s[0]);
+            //     expand_s[0]);
             /**/
 
 
-            //Number of environments
-            for (int ii = 1; ii < env_num; ii++) {
+            //Number of environments 
+            for (int ii = 1; ii < env_num; ii++) {  
                 minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
                 if (minkey[ii] >= goalkey[ii] && goalkey[ii].key[0] < INFINITECOST) {
                     conv = ii;
@@ -1600,143 +1548,90 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
                     break;
                 }
 
-
                 /** debug **/
                 // printf("\t Mink%d : %ld;\t Exp%d: %d", ii, minkey[ii].key[0], ii, expand_s[ii]);
                 // if(ii == env_num-1)
-                // printf("\n");
+                //     printf("\n");
                 /** end of debug **/
 
                 // if (minkey[ii].key[0] == INFINITECOST)
-                // printf("(Infinite cost : %d)\n", ii);
-                // printf("currentsize %d is %d\n",ii, pSearchStateSpace->heap->currentsize[ii]);
-                // printf("minkey0 %d\n", pSearchStateSpace->eps2*mink.key[0]);
-                // printf("minkyii %d %ld\n", ii, minkey[ii].key[0]);
-                if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST) || true || true)
-                 {
+                //     printf("(Infinite cost : %d)\n", ii);
+
+                if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST)) {
                 // if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST)) {
                     //printf("From ii = %d\n", ii);
-
                     state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-                    // if (ii == 4)
-                    // {
-                    //     CKey k;
-                    //     k = pSearchStateSpace->heap->getminkeyheap(ii);
-                    //     printf("MIN KEY %ld\n", k.key[0]);
-                    // }
-
-                    bool check;
-                    if (ii==3)
-                    {
-                        check = CheckLocalMinimum(state, ii);
-                        if ( check == true && !inlocalmin)
-                        {
-                            inlocalmin = true;
-                            MState* attractiveState;
-
-                            attractiveState = GetAttractiveState(pSearchStateSpace, laststate, ii);
-
-                            environment_->generateValidStateforState(attractiveState->MDPstate->StateID, laststate->MDPstate->StateID);
-
-
-                            if (env_num < 5)
-                            {
-                                printf("copying open list\n");
-                                CopyOpenList(pSearchStateSpace, 3);
-                                printf("Local Minima\n");
-                                getchar();
-                            }
-
-                        }
-                        else if (check == false)
-                        {
-                            // printf("out of local min\n");
-                            inlocalmin = false;
-                            env_num = 4;
-                        }
-
-                        laststate = state;
-                    }
-
-
-
-                    assert (state->iterationclosed[0] != pSearchStateSpace->searchiteration);
-                    if (state->iterationclosed[0] != pSearchStateSpace->searchiteration) {
+                    assert (state->iterationclosed[0] != pSearchStateSpace->searchiteration);  
+                    if (state->iterationclosed[0] != pSearchStateSpace->searchiteration) { 
                         state->v[ii] = state->g[0];
                         state->iterationclosed[0] = pSearchStateSpace->searchiteration;
                         expands++;
-
+                        // printf("EXPANDS %d\n", expands);
+                        // if (expands == 1000)
+                        // {
+                        //     env_num++;
+                        // }
                         // printf("env: %d\t mink: %d\t g:%d\th:%d\t\n", ii, minkey[ii].key[0],
-                        // state->g[0], state->h[ii]);
+                        //     state->g[0], state->h[ii]);
                         state->numofexpands++;
                         if (bforwardsearch == false)
                             UpdatePredsShared (state, pSearchStateSpace, ii);
                         else
                             UpdateSuccsShared (state, pSearchStateSpace, ii);
-                        if (_mstate_print) {
+                        if (_mstate_print) { 
                             SBPL_FPRINTF(stdout, "%d:: expanding state(%d): h=%d, h_ad =%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->h[0], state->g[0], searchgoalstate->g[0]);
-                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
-                        }
-                        expand_s[ii]++;
-                        for (int iii = 0; iii < env_num; iii++) {
-                            if(state->heapind[iii] != 0)
-                                {
-                                    // printf("queue %d bool %d\n",iii, pSearchStateSpace->heap->inheap(state,iii) );
-                                    pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
-                                }
-                            minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
-                        }
-                    }
-                    goalkey[ii].key[0] = searchgoalstate->g[0];
-                    mink = pSearchStateSpace->heap->getminkeyheap(0);
-                } else {
-                    int ii = 0;
-                    minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
-                    if (minkey[ii] >= goalkey[ii] && goalkey[ii].key[0] < INFINITECOST) {
-                        conv = ii;
-                        hush = true;
-                        break;
-                    }
-                    state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-                    assert (state->iterationclosed[1] != pSearchStateSpace->searchiteration);
-                    if (state->iterationclosed[1] != pSearchStateSpace->searchiteration) {
-                        state->v[ii] = state->g[ii];
-                        state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
-                        // iterationclosed[1] represents that it has been
-                        // expanded in anchor
-                        state->iterationclosed[1] = pSearchStateSpace->searchiteration;
-                        expands++;
-
-
-                        state->numofexpands++;
-                        if (bforwardsearch == false)
-                            UpdatePredsShared (state, pSearchStateSpace, ii);
-                        else
-                            UpdateSuccsShared (state, pSearchStateSpace, ii);
-
-                        if (_mstate_print) {
-                            SBPL_FPRINTF(stdout, "Admissible %d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
-                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
+                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
                         }
                         expand_s[ii]++;
                         for (int iii = 0; iii < env_num; iii++) {
                             if(state->heapind[iii] != 0)
                                 pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
                             minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
-                        }
+                        }   
                     }
                     goalkey[ii].key[0] = searchgoalstate->g[0];
-                    mink = pSearchStateSpace->heap->getminkeyheap(0);
+                    mink = pSearchStateSpace->heap->getminkeyheap(0);   
+                } else {
+                    int ii = 0;
+                    minkey[ii] = pSearchStateSpace->heap->getminkeyheap(ii);
+                    if (minkey[ii] >= goalkey[ii] && goalkey[ii].key[0] < INFINITECOST) {
+                        conv = ii;
+                        hush = true; 
+                        break;
+                    } 
+                    state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
+                    assert (state->iterationclosed[1] != pSearchStateSpace->searchiteration);  
+                    if (state->iterationclosed[1] != pSearchStateSpace->searchiteration) { 
+                        state->v[ii] = state->g[ii];
+                        state->iterationclosed[ii] = pSearchStateSpace->searchiteration;
+                        // iterationclosed[1] represents that it has been
+                        // expanded in anchor
+                        state->iterationclosed[1] = pSearchStateSpace->searchiteration; 
+                        expands++;
+
+                         
+                        state->numofexpands++;
+                        if (bforwardsearch == false)
+                            UpdatePredsShared (state, pSearchStateSpace, ii);
+                        else
+                            UpdateSuccsShared (state, pSearchStateSpace, ii);
+
+                        if (_mstate_print) { 
+                            SBPL_FPRINTF(stdout, "Admissible %d:: expanding state(%d): h=%d, g=%u (g(goal)=%u) :: Coord ", ii, state->MDPstate->StateID, state->h[ii], state->g[ii], searchgoalstate->g[ii]);
+                            environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
+                        }
+                        expand_s[ii]++;
+                        for (int iii = 0; iii < env_num; iii++) {
+                            if(state->heapind[iii] != 0)
+                                pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
+                            minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
+                        } 
+                    }
+                    goalkey[ii].key[0] = searchgoalstate->g[0];
+                    mink = pSearchStateSpace->heap->getminkeyheap(0);   
                 }
-
-                 // if (expands == 1000)
-                 //        {
-                 //            printf("LOCALLLLLLL\n");
-                 //            env_num++;
-                 //        }
             }
-
-            if (hush)
+            if (hush) 
                 break;
             if(expands%100000 == 0 && expands > 0)
                 SBPL_PRINTF("expands so far=%u\n", expands);
@@ -1749,7 +1644,7 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
     if (hush) {
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
-            printf("search[%d] expands= %d\n", ii, expand_s[ii]);
+            printf("search[%d] expands= %d\n", ii, expand_s[ii]); 
         }
         conv = 0;
     } else {
@@ -1759,14 +1654,14 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
     }
     //SBPL_FPRINTF(fDeb, "expanded=%d\n", expands);
     searchexpands += expands;
-    return retv;
+    return retv;        
 
 }
 //Single Search
 int MPlanner::ImprovePath(MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
         int expands;
-    MState *state, *searchgoalstate;
+    MState *state, *searchgoalstate; 
     CKey key, mink, minkey2;
     int minin = -1;
     CKey goalkey,minkey;
@@ -1792,13 +1687,13 @@ int MPlanner::ImprovePath(MSearchStateSpace_t* pSearchStateSpace, double MaxNumo
     bool hush = false;
     conv = 0;
     while(!pSearchStateSpace->heap->emptyheap(0) && minkey.key[0] < INFINITECOST && goalkey[0] > minkey[0] &&
-        (clock()-TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
+        (clock()-TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC) 
     {
 
-        //get the state
+        //get the state     
         state = (MState*)pSearchStateSpace->heap->deleteminheap(0);
-        //environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt);
-
+        //environment_->PrintState(state->MDPstate->StateID, true, stdout); //, xx, yy, tt); 
+        
         if(state->v[0] == state->g[0])
         {
             SBPL_ERROR("ERROR: consistent state is being expanded\n");
@@ -1806,7 +1701,7 @@ int MPlanner::ImprovePath(MSearchStateSpace_t* pSearchStateSpace, double MaxNumo
             throw new SBPL_Exception();
         }
 
-        //recompute state value
+        //recompute state value      
         state->v[0] = state->g[0];
         state->iterationclosed[0] = pSearchStateSpace->searchiteration;
 
@@ -1851,7 +1746,7 @@ int MPlanner::ImprovePath(MSearchStateSpace_t* pSearchStateSpace, double MaxNumo
     //SBPL_FPRINTF(fDeb, "expanded=%d\n", expands);
 
     searchexpands += expands;
-    return retv;
+    return retv;    
 }
 
 //Simple Search for Ith env
@@ -1885,7 +1780,7 @@ int MPlanner::CreateSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
 
 
     pSearchStateSpace->bReinitializeSearchStateSpace = false;
-
+    
     return 1;
 }
 
@@ -1893,10 +1788,10 @@ int MPlanner::CreateSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
 void MPlanner::DeleteSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
 {
     if(pSearchStateSpace->heap != NULL) {
-        for (int oo=0; oo < MAX_NUM; oo++)
+        for (int oo=0; oo < MAX_NUM; oo++) 
             pSearchStateSpace->heap->makeemptyheap(oo);
         }
-    for (int oo=0; oo < MAX_NUM; oo++) {
+    for (int oo=0; oo < MAX_NUM; oo++) { 
         if(pSearchStateSpace->inconslist[oo] != NULL)
         {
             //pSearchStateSpace->inconslist[oo]->makeemptylist(oo);
@@ -1940,15 +1835,15 @@ void MPlanner::ReInitializeSearchStateSpace(MSearchStateSpace_t* pSearchStateSpa
     pSearchStateSpace->bNewSearchIteration = true;
 
 #if DEBUG
-    SBPL_FPRINTF(fDeb, "reinitializing search state-space (new call number=%d search iter=%d)\n",
+    SBPL_FPRINTF(fDeb, "reinitializing search state-space (new call number=%d search iter=%d)\n", 
             pSearchStateSpace->callnumber,pSearchStateSpace->searchiteration );
 #endif
 
     for (int oo = 0; oo < MAX_NUM; oo++) {
         pSearchStateSpace->heap->makeemptyheap(oo);
-        //pSearchStateSpace->inconslist[oo]->makeemptylist(oo);
+        //pSearchStateSpace->inconslist[oo]->makeemptylist(oo); 
     }
-    //reset
+    //reset 
     pSearchStateSpace->eps = this->finitial_eps;
     pSearchStateSpace->eps1 = this->finitial_eps1;
     pSearchStateSpace->eps2 = this->finitial_eps2;
@@ -1960,12 +1855,12 @@ void MPlanner::ReInitializeSearchStateSpace(MSearchStateSpace_t* pSearchStateSpa
     if(startstateinfo->callnumberaccessed[0] != pSearchStateSpace->callnumber)
         ReInitializeSearchStateInfo(startstateinfo, pSearchStateSpace);
 
-        for (int oo = 0; oo < env_num; oo++) {
+        for (int oo = 0; oo < MAX_NUM; oo++) {
         startstateinfo->g[oo] = 0;
         key.key[0] = (long int)(pSearchStateSpace->eps1*startstateinfo->h[oo]);
-        if (startstateinfo->heapind[oo] == 0)
+        if (startstateinfo->heapind[oo] == 0) 
             pSearchStateSpace->heap->insertheap(startstateinfo, key, oo);
-        else
+        else 
             pSearchStateSpace->heap->updateheap(startstateinfo, key, oo);
     }
         pSearchStateSpace->bReinitializeSearchStateSpace = false;
@@ -1980,7 +1875,7 @@ int MPlanner::InitializeSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
         if(pSearchStateSpace->heap->currentsize[oo] != 0 || pSearchStateSpace->inconslist[oo]->currentsize !=0) {
             SBPL_ERROR("ERROR in InitializeSearchStateSpace: heap or list is not empty\n");
             throw new SBPL_Exception();
-        }
+        } 
     }
     pSearchStateSpace->eps = this->finitial_eps;
     pSearchStateSpace->eps1 = this->finitial_eps1;
@@ -1996,7 +1891,7 @@ int MPlanner::InitializeSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
     pSearchStateSpace->searchgoalstate = NULL;
     //pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
     pSearchStateSpace->searchstartstate = NULL;
-
+    
 
     pSearchStateSpace->bReinitializeSearchStateSpace = true;
 
@@ -2006,13 +1901,13 @@ int MPlanner::InitializeSearchStateSpace(MSearchStateSpace_t* pSearchStateSpace)
 int MPlanner::SetSearchGoalState(int SearchGoalStateID, MSearchStateSpace_t* pSearchStateSpace, int j)
 {
   //deprecated
-  assert(0);
+  assert(0); 
   return -1;
 }
 
 int MPlanner::SetSearchGoalState(int SearchGoalStateID, MSearchStateSpace_t* pSearchStateSpace)
 {
-    if(pSearchStateSpace->searchgoalstate == NULL ||
+    if(pSearchStateSpace->searchgoalstate == NULL || 
         pSearchStateSpace->searchgoalstate->StateID != SearchGoalStateID)
     {
         pSearchStateSpace->searchgoalstate = GetState(SearchGoalStateID, pSearchStateSpace);
@@ -2031,7 +1926,7 @@ int MPlanner::SetSearchGoalState(int SearchGoalStateID, MSearchStateSpace_t* pSe
         {
             CMDPSTATE* MDPstate = pSearchStateSpace->searchMDP.StateArray[i];
             MState* state = (MState*)MDPstate->PlannerSpecificData;
-            for (int oo = 0; oo < env_num; oo++) {
+            for (int oo = 0; oo < env_num; oo++) {          //have to change
                 state->h[oo] = ComputeHeuristic(MDPstate, pSearchStateSpace, oo);
             }
         }
@@ -2047,19 +1942,19 @@ int MPlanner::SetSearchStartState(int SearchStartStateID, MSearchStateSpace_t* p
 {
     CMDPSTATE* MDPstate = GetState(SearchStartStateID, pSearchStateSpace);
         assert (MDPstate != NULL);
-    if(MDPstate != pSearchStateSpace->searchstartstate)
-    {
+    if(MDPstate !=  pSearchStateSpace->searchstartstate)
+    {   
         pSearchStateSpace->searchstartstate = MDPstate;
         pSearchStateSpace->bReinitializeSearchStateSpace = true;
     }
-
+    
     return 1;
 }
 
 
 
 int MPlanner::ReconstructPath(MSearchStateSpace_t* pSearchStateSpace)
-{
+{   
     if(bforwardsearch) //nothing to do, if search is backward
     {
         CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
@@ -2077,7 +1972,7 @@ int MPlanner::ReconstructPath(MSearchStateSpace_t* pSearchStateSpace)
             PrintSearchState(stateinfo, fDeb);
 #endif
             if(stateinfo->g[conv] == INFINITECOST)
-            {
+            {   
                 SBPL_ERROR("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
                 //throw new SBPL_Exception();
                 return -1;
@@ -2098,7 +1993,7 @@ int MPlanner::ReconstructPath(MSearchStateSpace_t* pSearchStateSpace)
             //check the decrease of g-values along the path
             if(predstateinfo->g[conv] >= stateinfo->g[conv])
             {
-                SBPL_ERROR("ERROR in ReconstructPath: g-values are non-decreasing\n");
+                SBPL_ERROR("ERROR in ReconstructPath: g-values are non-decreasing\n");          
                 PrintSearchState(predstateinfo, fDeb);
                 throw new SBPL_Exception();
             }
@@ -2122,7 +2017,7 @@ void MPlanner::PrintSearchPath(MSearchStateSpace_t* pSearchStateSpace, FILE* fOu
 
     if(bforwardsearch)
     {
-        state = pSearchStateSpace->searchstartstate;
+        state  = pSearchStateSpace->searchstartstate;
         goalID = pSearchStateSpace->searchgoalstate->StateID;
     }
     else
@@ -2135,11 +2030,11 @@ void MPlanner::PrintSearchPath(MSearchStateSpace_t* pSearchStateSpace, FILE* fOu
 
     PathCost = ((MState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g[conv];
 
-    SBPL_FPRINTF(fOut, "Printing a path from state %d to the goal state %d\n",
+    SBPL_FPRINTF(fOut, "Printing a path from state %d to the goal state %d\n", 
             state->StateID, pSearchStateSpace->searchgoalstate->StateID);
     SBPL_FPRINTF(fOut, "Path cost = %d:\n", PathCost);
-
-
+            
+    
     environment_->PrintState(state->StateID, false, fOut);
 
     int costFromStart = 0;
@@ -2173,7 +2068,7 @@ void MPlanner::PrintSearchPath(MSearchStateSpace_t* pSearchStateSpace, FILE* fOu
 
         costFromStart += transcost;
 
-        SBPL_FPRINTF(fOut, "g=%d-->state %d, h = %d, ctg = %d ", searchstateinfo->g[conv],
+        SBPL_FPRINTF(fOut, "g=%d-->state %d, h = %d, ctg = %d  ", searchstateinfo->g[conv],             
             searchstateinfo->bestnextstate[conv]->StateID, searchstateinfo->h[conv], costToGoal);
 
         state = searchstateinfo->bestnextstate[conv];
@@ -2188,8 +2083,8 @@ void MPlanner::PrintSearchPath(MSearchStateSpace_t* pSearchStateSpace, FILE* fOu
 void MPlanner::PrintSearchState(MState* state, FILE* fOut)
 {
     /*SBPL_FPRINTF(fOut, "state %d: h1=%d h2=%d g=%u v=%u iterc=%d callnuma=%d expands=%d heapind=%d inconslist=%d\n",
-state->MDPstate->StateID, state->h1, state->h2, state->g, state->v,
-state->iterationclosed, state->callnumberaccessed1, state->numofexpands, state->heapindex, state->listelem[M_INCONS_LIST_ID1]?1:0);*/
+        state->MDPstate->StateID, state->h1, state->h2, state->g, state->v, 
+        state->iterationclosed, state->callnumberaccessed1, state->numofexpands, state->heapindex, state->listelem[M_INCONS_LIST_ID1]?1:0);*/
     environment_->PrintState(state->MDPstate->StateID, true, fOut);
 
 }
@@ -2210,15 +2105,15 @@ vector<int> MPlanner::GetSearchPath(MSearchStateSpace_t* pSearchStateSpace, int&
   vector<int> CostV;
   vector<int> wholePathIds;
   MState* searchstateinfo;
-  CMDPSTATE* state = NULL;
+  CMDPSTATE* state = NULL; 
   CMDPSTATE* goalstate = NULL;
   CMDPSTATE* startstate=NULL;
-
+  
   if(bforwardsearch)
-    {
+    {   
       startstate = pSearchStateSpace->searchstartstate;
       goalstate = pSearchStateSpace->searchgoalstate;
-
+      
       //reconstruct the path by setting bestnextstate pointers appropriately
       ReconstructPath(pSearchStateSpace);
     }
@@ -2227,13 +2122,13 @@ vector<int> MPlanner::GetSearchPath(MSearchStateSpace_t* pSearchStateSpace, int&
       startstate = pSearchStateSpace->searchgoalstate;
       goalstate = pSearchStateSpace->searchstartstate;
     }
-
-
+  
+  
   state = startstate;
-
+  
   wholePathIds.push_back(state->StateID);
   solcost = 0;
-
+  
   FILE* fOut = stdout;
   if(fOut == NULL){
     SBPL_ERROR("ERROR: could not open file\n");
@@ -2246,9 +2141,9 @@ vector<int> MPlanner::GetSearchPath(MSearchStateSpace_t* pSearchStateSpace, int&
       SBPL_FPRINTF(fOut, "path does not exist since search data does not exist\n");
       break;
     }
-
+      
       searchstateinfo = (MState*)state->PlannerSpecificData;
-
+      
       if(searchstateinfo->bestnextstate[conv] == NULL)
     {
       SBPL_FPRINTF(fOut, "path does not exist since bestnextstate == NULL\n");
@@ -2260,50 +2155,50 @@ vector<int> MPlanner::GetSearchPath(MSearchStateSpace_t* pSearchStateSpace, int&
       SBPL_FPRINTF(fOut, "path does not exist since bestnextstate == NULL\n");
       break;
     }
-
+      
       environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
       int actioncost = INFINITECOST;
       for(int i = 0; i < (int)SuccIDV.size(); i++)
-        {
-
+        {   
+      
     if(SuccIDV.at(i) == searchstateinfo->bestnextstate[conv]->StateID && CostV.at(i)<actioncost)
         actioncost = CostV.at(i);
-
+      
         }
       if(actioncost == INFINITECOST)
     SBPL_PRINTF("WARNING: actioncost = %d\n", actioncost);
-
+      
       solcost += actioncost;
-
-    /* SBPL_FPRINTF(stdout, "actioncost=%d between states %d and %d\n",
-actioncost, state->StateID, searchstateinfo->bestnextstate[conv]->StateID);
-environment_->PrintState(state->StateID, false, stdout);
-environment_->PrintState(searchstateinfo->bestnextstate[conv]->StateID, false, stdout);
-*/
-
+      
+    /*  SBPL_FPRINTF(stdout, "actioncost=%d between states %d and %d\n", 
+              actioncost, state->StateID, searchstateinfo->bestnextstate[conv]->StateID);
+      environment_->PrintState(state->StateID, false, stdout);
+      environment_->PrintState(searchstateinfo->bestnextstate[conv]->StateID, false, stdout);
+     */ 
+      
 #if DEBUG
       MState* nextstateinfo = (MState*)(searchstateinfo->bestnextstate[conv]->PlannerSpecificData);
       if(actioncost != abs((int)(searchstateinfo->g[conv] - nextstateinfo->g[conv])) && pSearchStateSpace->eps_satisfied <= 1.001)
     {
-      SBPL_FPRINTF(fDeb, "ERROR: actioncost=%d is not matching the difference in g-values of %d\n",
+      SBPL_FPRINTF(fDeb, "ERROR: actioncost=%d is not matching the difference in g-values of %d\n", 
           actioncost, abs((int)(searchstateinfo->g[conv] - nextstateinfo->g[conv])));
-      SBPL_ERROR("ERROR: actioncost=%d is not matching the difference in g-values of %d\n",
+      SBPL_ERROR("ERROR: actioncost=%d is not matching the difference in g-values of %d\n", 
          actioncost,abs((int)(searchstateinfo->g[conv] - nextstateinfo->g[conv])));
       PrintSearchState(searchstateinfo, fDeb);
       PrintSearchState(nextstateinfo, fDeb);
     }
 #endif
-
-
+      
+      
       state = searchstateinfo->bestnextstate[conv];
-
+      
       wholePathIds.push_back(state->StateID);
     }
 
 
   return wholePathIds;
 }
-
+    
 
 bool MPlanner::Search(MSearchStateSpace_t* pSearchStateSpace, vector<int>& pathIds, int & PathCost, bool bFirstSolution, bool bOptimalSolution, double MaxNumofSecs)
 {
@@ -2333,12 +2228,12 @@ bool MPlanner::Search(MSearchStateSpace_t* pSearchStateSpace, vector<int>& pathI
     loop_time = clock();
     environment_->EnsureHeuristicsUpdated((bforwardsearch==true)); //Venkat : Please make sure all the heuristics are precaculated
     int prevexpands = 0;
-    while(pSearchStateSpace->eps_satisfied > M_FINAL_EPS &&
+    while(pSearchStateSpace->eps_satisfied > M_FINAL_EPS && 
         (clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
     {
             loop_time = clock();
         for (int ii = 0; ii < MAX_NUM; ii++) {
-          expand_s[ii] = 0;
+          expand_s[ii] = 0; 
         }
                 pSearchStateSpace->searchiteration++;// = pSearchStateSpace->eps1;
         int mincost;
@@ -2391,7 +2286,7 @@ bool MPlanner::Search(MSearchStateSpace_t* pSearchStateSpace, vector<int>& pathI
         if(bFirstSolution)
             break;
         //no solution exists
-        if(((MState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g[conv] == INFINITECOST)
+        if(((MState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g[conv] == INFINITECOST) 
             break;
 
     }
@@ -2403,15 +2298,15 @@ bool MPlanner::Search(MSearchStateSpace_t* pSearchStateSpace, vector<int>& pathI
     clock_t final_time = (clock()-TimeStarted);
     PathCost = ((MState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g[conv];
     /*float MM = 0;
-for (int oo =0; oo < env_num; oo++){
-MaxMemoryCounter += env_[oo]->StateID2IndexMapping.size()*sizeof(int);
-MaxMemoryCounter += sizeof(pSearchStateSpace->inconslist[oo]);
-MaxMemoryCounter += pSearchStateSpace->heap->allocated[oo]*sizeof(int);
-MM += (pSearchStateSpace->heap->allocated[oo]*sizeof(MState)/1000000.0);
-MM += (sizeof(pSearchStateSpace->inconslist[oo])*sizeof(MState))/1000000.0;
-//printf("q [%d] => m1=%d, m2=%d, m3=%d\n", oo, int (env_[oo]->StateID2IndexMapping.size()*sizeof(int)),int (sizeof(pSearchStateSpace->inconslist[oo])), pSearchStateSpace->heap->allocated[oo]);
-//printf("sizeof heap -- %ld\n", sizeof(pSearchStateSpace->heap));
-}*/
+    for (int oo =0; oo < env_num; oo++){ 
+        MaxMemoryCounter += env_[oo]->StateID2IndexMapping.size()*sizeof(int);
+        MaxMemoryCounter += sizeof(pSearchStateSpace->inconslist[oo]);
+        MaxMemoryCounter += pSearchStateSpace->heap->allocated[oo]*sizeof(int);
+        MM += (pSearchStateSpace->heap->allocated[oo]*sizeof(MState)/1000000.0);
+        MM += (sizeof(pSearchStateSpace->inconslist[oo])*sizeof(MState))/1000000.0;
+                //printf("q [%d] => m1=%d, m2=%d, m3=%d\n", oo, int (env_[oo]->StateID2IndexMapping.size()*sizeof(int)),int (sizeof(pSearchStateSpace->inconslist[oo])), pSearchStateSpace->heap->allocated[oo]);   
+        //printf("sizeof heap -- %ld\n", sizeof(pSearchStateSpace->heap));
+    }*/ 
     //MaxMemoryCounter += sizeof(pSearchStateSpace->heap); //->allocated[oo];
     SBPL_PRINTF("MaxMemoryCounter = %ld\n", MaxMemoryCounter);
 
@@ -2424,13 +2319,13 @@ MM += (sizeof(pSearchStateSpace->inconslist[oo])*sizeof(MState))/1000000.0;
     }
     else
     {
-        SBPL_PRINTF("solution is found\n");
+        SBPL_PRINTF("solution is found\n");      
         pathIds = GetSearchPath(pSearchStateSpace, solcost);
             ret = true;
     }
     finitial_eps_planning_time = (clock() - loop_time)/(double)CLOCKS_PER_SEC;
 
-    SBPL_PRINTF("total expands this call = %d, planning time = %.3f secs, memory = %0.2f, solution cost=%d\n",
+    SBPL_PRINTF("total expands this call = %d, planning time = %.3f secs, memory = %0.2f, solution cost=%d\n", 
            searchexpands, final_time/((double)CLOCKS_PER_SEC), MaxMemoryCounter/1000000.0, solcost);
         final_eps_planning_time = (clock()-TimeStarted)/((double)CLOCKS_PER_SEC);
         final_eps = pSearchStateSpace->eps_satisfied;
@@ -2446,31 +2341,31 @@ int MPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_
     int solcost;
 
     return replan(allocated_time_secs, solution_stateIDs_V, &solcost);
-
+    
 }
 
 //returns 1 if found a solution, and 0 otherwise
 int MPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* psolcost)
 {
-  vector<int> pathIds;
+  vector<int> pathIds; 
   bool bFound = false;
   int PathCost;
   bool bFirstSolution = true; //this->bsearchuntilfirstsolution;
   bool bOptimalSolution = false;
   *psolcost = 0;
-
+  
   SBPL_PRINTF("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bFirstSolution, bOptimalSolution);
-
+  
   //plan
-  if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false)
+  if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false) 
     {
       SBPL_PRINTF("failed to find a solution\n");
     }
-
+  
   //copy the solution
   *solution_stateIDs_V = pathIds;
   *psolcost = PathCost;
-
+  
   return (int)bFound;
 
 }
@@ -2487,7 +2382,7 @@ int MPlanner::set_goal(int goal_stateID)
     SBPL_PRINTF("planner: setting goal to %d\n", goal_stateID);
     environment_->PrintState(goal_stateID, true, stdout);
     if(bforwardsearch)
-    {
+    {   
         if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
         {
             SBPL_ERROR("ERROR: failed to set search goal state\n");
@@ -2513,7 +2408,7 @@ int MPlanner::set_start(int start_stateID)
     environment_->PrintState(start_stateID, true, stdout);
 
     if(bforwardsearch)
-    {
+    {   
 
         if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
         {
@@ -2576,56 +2471,4 @@ int MPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 void MPlanner::print_searchpath(FILE* fOut)
 {
     PrintSearchPath(pSearchStateSpace_, fOut);
-}
-
-bool MPlanner::CheckLocalMinimum(MState* state, int i)
-{
-       // getchar();
-    printf("h value %d\n", state->h[i]);
-    static int last_h = 1000000;
-    if (state->h[i] < last_h)
-    {
-        last_h = state->h[i];
-        return false;
-    }
-    else
-    {
-        return true;
-    }
-
-}
-
-MState* MPlanner::GetAttractiveState(MSearchStateSpace_t* pSearchStateSpace, MState* state, int i)
-{
-    vector<int> PredIDV;
-    vector<int> CostV;
-    CKey key;
-    MState *predstate;
-    int h_min = 1000000;
-    MState *minstate;
-
-    environment_->GetSuccs(state->MDPstate->StateID, &PredIDV, &CostV, 10);
-    // printf("(Size of predIDV : %d)\n", PredIDV.size());
-    //iterate through predecessors of s
-
-    for(int pind = 0; pind < (int)PredIDV.size(); pind++)
-    {
-        CMDPSTATE* PredMDPState = GetState(PredIDV[pind], pSearchStateSpace);
-        predstate = (MState*)(PredMDPState->PlannerSpecificData);
-        if(predstate->callnumberaccessed[0] != pSearchStateSpace->callnumber) {
-            assert(0);
-            printf("(ASSERT SUPPOSED TO FAIL)\n");
-            ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
-        }
-        //printf("State [%d] = %d\n",pind, PredMDPState->StateID);
-        //see if we can improve the value of predstate
-        if (predstate->h[i] < h_min)
-        {
-            h_min = predstate->h[i];
-            minstate = predstate;
-
-        }
-    } //for successors
-    printf("attractive h value %d \n", minstate->h[i]);
-    return minstate;
 }

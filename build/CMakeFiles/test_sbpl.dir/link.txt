@@ -1,0 +1,1 @@
+/usr/bin/c++   -O3 -DNDEBUG    CMakeFiles/test_sbpl.dir/src/test/main.cpp.o  -o test_sbpl -rdynamic libsbpl.so -Wl,-rpath,/home/fahad/catkin_ws/src/sbpl/build 

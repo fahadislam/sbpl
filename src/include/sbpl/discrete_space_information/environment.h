@@ -40,7 +40,7 @@ struct MDPConfig;
 
 /**
  * \brief base class for environments defining planning graphs
- * 
+ *
  * It is independent of the graph search used
  * The main means of communication between environment and graph search is
  * through stateID.  Each state is uniquely defined by stateID and graph
@@ -56,7 +56,7 @@ public:
      * \brief mapping from hashentry stateID (used in environment to contain
      *        the coordinates of a state, say x,y or x,y,theta)
      *        to an array of state indices used in searches.
-     * 
+     *
      * If a single search is done, then it is a single entry.  So
      * StateID2IndexMapping[100][0] = 5 means that hashentry with stateID 100
      * is mapped onto search index = 5 in search 0 The value of -1 means that
@@ -88,7 +88,7 @@ public:
      * \brief heuristic estimate from state with stateID to goal state
      */
     virtual int GetGoalHeuristic(int stateID) = 0;
-    
+
     // \brief heuristic - heur_id estimate from state with stateID to goal state
     virtual int  GetGoalHeuristic(int stateID, int heur_id){}
 
@@ -113,11 +113,16 @@ public:
     virtual void GetSuccs(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CostV, int ii)
     {};
 
+    virtual void visualizeState(int stateID){};    //fahad
+
+    virtual void generateValidStateforState(int attractstateID, int repulstateID){};   //fahad
+
+
     /**
      * \brief see comments for GetSuccs functon
      */
     virtual void GetPreds(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CostV) = 0;
-     
+
     /**
      * \brief see comments for GetSuccs functon
      */
