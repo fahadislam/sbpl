@@ -40,6 +40,8 @@
 //final epsilon bound
 #define M_FINAL_EPS	    1.0
 
+#define LOCALMIN_LIMIT	100
+
 enum {
     T_SMHA,
     T_IMHA,
@@ -56,7 +58,7 @@ enum {
 #define M_INCONS_LIST_ID2 1
 
 #include <cstdio>
-#include <ctime>
+#include <ctime>r
 #include <vector>
 #include <sbpl/planners/planner.h>
 #include <sbpl/utils/mdp.h>
@@ -158,6 +160,7 @@ class MPlanner : public SBPLPlanner
 		void costs_changed();
 		void PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int a);
 		void CopyOpenList(MSearchStateSpace_t* pSearchStateSpace, int i);	//fahad
+		void UpdateOpenList(MSearchStateSpace_t* pSearchStateSpace, int i);	//fahad
 		int force_planning_from_scratch();
 
 		int set_search_mode(bool bSearchUntilFirstSolution);
@@ -222,8 +225,6 @@ class MPlanner : public SBPLPlanner
 		FILE *fDeb;
 
 		int m_planner_type;
-
-
 		//member functions
 		void Initialize_searchinfo(CMDPSTATE* state, MSearchStateSpace_t* pSearchStateSpace);
 		void Initialize_searchinfoCombined(CMDPSTATE* state, MSearchStateSpace_t* pSearchStateSpace);

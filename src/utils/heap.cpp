@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Maxim Likhachev
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the University of Pennsylvania nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -517,7 +517,7 @@ CHeapArr::CHeapArr(int num)
   percolates = 0;
   if (num > MAX_NUM) {
     heaperror("Max number exceeded");
-  } 
+  }
   for (int j=0; j < num; j++) {
   	currentsize[j] = 0;
   	allocated[j] = HEAPSIZE_INIT;
@@ -570,7 +570,7 @@ void CHeapArr::percolatedown(int hole, heapelement tmp, int i)
 
 void CHeapArr::percolateup(int hole, heapelement tmp, int i)
 {
-  
+
   if (currentsize[i] != 0)
     {
       for (; hole > 1 && tmp.key < heap[i][hole/2].key; hole /= 2)
@@ -578,7 +578,7 @@ void CHeapArr::percolateup(int hole, heapelement tmp, int i)
 		percolates += 1;
 		heap[i][hole] = heap[i][hole/2];
 		heap[i][hole].heapstate->heapind[i] = hole;
-	  }  
+	  }
       heap[i][hole] = tmp;
       heap[i][hole].heapstate->heapind[i] = hole;
     }
@@ -589,7 +589,7 @@ void CHeapArr::percolateupordown(int hole, heapelement tmp, int i)
     // printf("i %d\n",i);
   if (currentsize[i] != 0)
     {
-        
+
     // if (hole/2 >= currentsize[i] || hole < 0)       //hack
     // {
     //         return;
@@ -697,14 +697,14 @@ void CHeapArr::insertheap(AbstractSearchState *AbstractSearchState, CKey key, in
    }
   tmp.heapstate = AbstractSearchState;
   tmp.key = key;
-  percolateup(++currentsize[i], tmp, i); 
+  percolateup(++currentsize[i], tmp, i);
 }
 
 void CHeapArr::deleteheap(AbstractSearchState *AbstractSearchState, int i)
 {
   if (AbstractSearchState->heapind[i] == 0)
     heaperror("deleteheap: AbstractSearchState is not in heap");
-  
+
   // if (currentsize[i]>0) //hack
     percolateupordown(AbstractSearchState->heapind[i], heap[i][currentsize[i]--], i);
 
@@ -720,7 +720,7 @@ void CHeapArr::updateheap(AbstractSearchState *AbstractSearchState, CKey NewKey,
       heap[i][AbstractSearchState->heapind[i]].key = NewKey;
 
       percolateupordown(AbstractSearchState->heapind[i], heap[i][AbstractSearchState->heapind[i]], i);
-  
+
     }
 }
 
@@ -751,10 +751,10 @@ void CHeapArr::insert_unsafe(AbstractSearchState *AbstractSearchState, CKey key,
 void CHeapArr::deleteheap_unsafe(AbstractSearchState *AbstractSearchState, int i) {
 	if (AbstractSearchState->heapind[i] == 0)
 	 heaperror("deleteheap: AbstractSearchState is not in heap");
-	
+
 	heap[i][AbstractSearchState->heapind[i]] = heap[i][currentsize[i]];
 	--currentsize[i];
-	
+
 	heap[i][AbstractSearchState->heapind[i]].heapstate->heapind[i] = AbstractSearchState->heapind[i];
 	AbstractSearchState->heapind[i] = 0;
 
@@ -764,7 +764,7 @@ void CHeapArr::updateheap_unsafe(AbstractSearchState *AbstractSearchState, CKey 
 
 	if (AbstractSearchState->heapind[i] == 0)
 		heaperror("Updateheap: AbstractSearchState is not in heap");
-	if (heap[i][AbstractSearchState->heapind[i]].key != NewKey) {	
+	if (heap[i][AbstractSearchState->heapind[i]].key != NewKey) {
 		heap[i][AbstractSearchState->heapind[i]].key = NewKey;
 	}
 }
@@ -789,7 +789,7 @@ AbstractSearchState* CHeapArr::getminheap(CKey& ReturnKey, int i)
 }
 
 CKey CHeapArr::getminkeyheap(int i)
-{  
+{
   CKey ReturnKey;
   if (currentsize[i] == 0)
     return InfiniteKey();
@@ -799,14 +799,13 @@ CKey CHeapArr::getminkeyheap(int i)
 
 AbstractSearchState* CHeapArr::deleteminheap(int i)
 {
-    // printf("i ammmmmmmmmmmmmmmmmmmmm %d\n", i);
   AbstractSearchState *AbstractSearchState;
 
   if (currentsize[i] == 0)
     heaperror("DeleteMin: heap is empty");
 
   AbstractSearchState = heap[i][1].heapstate;
-  //printf("Before delete --%d\n", AbstractSearchState->heapindex1); 
+  //printf("Before delete --%d\n", AbstractSearchState->heapindex1);
   //assert(AbstractSearchState->heapindex1 == 1);
   AbstractSearchState->heapind[i] = 0;
   percolatedown(1, heap[i][currentsize[i]--],i);

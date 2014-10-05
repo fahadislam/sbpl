@@ -43,8 +43,19 @@ bool _mstate_print = false;
 int conv = -1;
 int expand_s[11];
 
+int num_dyn = 0;
+int dyn[2] = {0};
 bool NO_REEX = true; //FOR MHGBFS NO_REEX = true means no reexpansions
+bool combined = true;
 
+bool dynamic = true;
+
+int lasth_base =1000000;
+int lasth_endeff = 1000000;
+int localmincount_base = 0;
+int localmincount_endeff = 0;
+int lasth_dynamic = 1000000;
+int localmincount_dynamic = 0;
 
 MPlanner::MPlanner(DiscreteSpaceInformation* environment, int kk, bool bSearchForward,
     int planner_type)
@@ -59,6 +70,7 @@ MPlanner::MPlanner(DiscreteSpaceInformation* environment, int kk, bool bSearchFo
     searchexpands = 0;
     MaxMemoryCounter = 0;
     m_planner_type = planner_type;
+
 #ifndef ROS
   const char* debug = "debug.txt";
 #endif
@@ -181,6 +193,7 @@ int MPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, MSearchStateSpace_t* pSearch
     static int localMinCount[MAX_NUM]={0};
     int min_size = 3000;
     //compute heuristic for search
+    CKey mink;
     if(bforwardsearch)
     {
         //forward search: heur = distance from state to searchgoal which is Goal MState
@@ -193,22 +206,38 @@ int MPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, MSearchStateSpace_t* pSearch
             // if (i == 1)
                 // printf("h_value %d id %d\n", environment_->GetGoalHeuristic(MDPstate->StateID, i), i);
 
-            h = environment_->GetGoalHeuristic(MDPstate->StateID, i);
-            if (i<4)
-            {
+            // h = environment_->GetGoalHeuristic(MDPstate->StateID, i);
+            // if (i<3)
+            // {
 
-                if (h < h_best[i])
-                {
-                    localMinCount[i] = 0;
-                    h_best[i] = h;
-                }
-                else
-                    localMinCount[i]++;
+            //     if (h < h_best[i])
+            //     {
+            //         localMinCount[i] = 0;
+            //         h_best[i] = h;
+            //     }
+            //     else
+            //         localMinCount[i]++;
 
 
-            }
+            // }
             // if (i==3)
             // printf("heuristic %d value %d stateid %d\n", i, environment_->GetGoalHeuristic(MDPstate->StateID, i), MDPstate->StateID);
+
+            if (i > 2)
+            {//printf("dyn %d\n", dyn[i-4]);
+                if (combined)
+                {
+                    mink = pSearchStateSpace->heap->getminkeyheap(0);
+                    // printf("key g %d %d\n", (int)mink.key[0], GetGVal(MDPstate->StateID, pSearchStateSpace));
+                    // getchar();
+                    environment_->passKeyValue((int)mink.key[0], GetGVal(MDPstate->StateID, pSearchStateSpace));
+                    return environment_->GetGoalHeuristic(MDPstate->StateID, 6);
+                }
+
+                else
+                    return environment_->GetGoalHeuristic(MDPstate->StateID, dyn[i-4]);
+            }
+
          return environment_->GetGoalHeuristic(MDPstate->StateID, i);
         }
 
@@ -218,6 +247,7 @@ int MPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, MSearchStateSpace_t* pSearch
         if (i == 0)
             return environment_->GetStartHeuristic(MDPstate->StateID);
         else
+
             // return pSearchStateSpace->eps2*environment_->GetStartHeuristic(MDPstate->StateID, i); //Venkat: This is just for testing
             return environment_->GetStartHeuristic(MDPstate->StateID, i); //Venkat: This is just for testing
             // return environment_->GetStartHeuristicNew(MDPstate->StateID, x, y); //Venkat: Please change this interface as suitable
@@ -791,6 +821,7 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
         //see if we can improve the value of predstate
         if(predstate->g[0] > state->g[0] + CostV[pind])
         {
+
             // if (i==4)
             //     getchar();
             predstate->g[0] = state->g[0] + CostV[pind];
@@ -845,6 +876,7 @@ void MPlanner::UpdateSuccsShared(MState* state, MSearchStateSpace_t* pSearchStat
                         // }
 
                         if (kk < pSearchStateSpace->eps2*anchor) {
+
                             key.key[0] = kk;
                             if(predstate->heapind[ii] != 0)
                                 pSearchStateSpace->heap->updateheap(predstate,key,ii);
@@ -868,42 +900,160 @@ int MPlanner::GetGVal(int StateID, MSearchStateSpace_t* pSearchStateSpace)
      return state->g[0];
 }
 
+// void MPlanner::CopyOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
+// {
+//     // printf("i value is %d\n", i);
+//     MState *state;
+//     CKey key;
+//     CHeapArr* pheap = pSearchStateSpace->heap;
+//     vector<MState*> general;
+//     // printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
+//     for (int s=0; s<pheap->currentsize[env_num]; s++)
+//         pheap->deleteminheap(env_num);
+
+
+//     // int count = 0;
+//     while(!pheap->emptyheap(i)) {
+//         //get the state
+//         // count++;
+//         // if (count > 1000)
+//         //     break;
+//         state = (MState*)pheap->deleteminheap(i);
+//         general.push_back(state);
+
+//     }
+
+//     for (int pp =0; pp < (int) general.size(); pp++)
+//     {
+//         state = general[pp];
+
+//         //putting back
+//         key.key[0] = state->g[i] + (int)(pSearchStateSpace->eps1*state->h[i]);
+
+//         if (state->heapind[i]==0)
+//             pheap->insertheap(state,key,i);
+//         else
+//             pheap->updateheap(state, key, i);
+
+//         //copying
+
+//         if (combined)
+//             state->h[env_num] = environment_->GetGoalHeuristic(state->MDPstate->StateID, 6);
+//         else
+//             state->h[env_num] = environment_->GetGoalHeuristic(state->MDPstate->StateID, i+2);
+
+//         //todo for smha only
+//         key.key[0] = state->g[0] + (int)pSearchStateSpace->eps1*state->h[env_num];
+
+//         state->heapind[env_num]=0;     //to be fixed
+//         pheap->insertheap(state,key,env_num);             //to be fixed
+
+//     }
+
+// }
+
 void MPlanner::CopyOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
+{
+    // printf("i value is %d\n", i);
+    MState *state;
+    CKey key, mink;
+    CHeapArr* pheap = pSearchStateSpace->heap;
+    vector<MState*> general;
+    // printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
+    for (int s=0; s<pheap->currentsize[env_num]; s++)
+        pheap->deleteminheap(env_num);
+
+
+    int count = pheap->currentsize[i];
+    printf("count %d\n", count);
+    for (int j=0; j < count; j++)
+    {
+        state = (MState*)pSearchStateSpace->heap->heap[i][j+1].heapstate;
+        if (combined)
+        {
+            mink = pSearchStateSpace->heap->getminkeyheap(0);
+            environment_->passKeyValue(mink.key[0], state->g[0]);
+            state->h[env_num] = environment_->GetGoalHeuristic(state->MDPstate->StateID, 6);
+        }
+
+        else
+            state->h[env_num] = environment_->GetGoalHeuristic(state->MDPstate->StateID, i+2);
+
+        key.key[0] = state->g[0] + (int)pSearchStateSpace->eps1*state->h[env_num];
+        // printf("key %d\n", key.key[0]);
+        state->heapind[env_num]=0;     //to be fixed
+        pheap->insertheap(state,key,env_num);             //to be fixed
+
+    }
+
+
+
+}
+
+void MPlanner::UpdateOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
 {
     MState *state;
     CKey key;
     CHeapArr* pheap = pSearchStateSpace->heap;
     vector<MState*> general;
     // printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
-    while(!pheap->emptyheap(i)) {
-        //get the state
-        state = (MState*)pheap->deleteminheap(i);
-        // PrintSearchState(state, stdout);
-        general.push_back(state);
-        //printf("what \n");
-    } //assert(pheap->emptyheap());
-    //move incons into open
-    env_num++;
-    for (int pp =0; pp < (int) general.size(); pp++)
+    // getchar();
+    for (int j=0; j < pheap->currentsize[i]; j++)
     {
-        state = general[pp];
-        //compute f-value
-        // printf("g %d h %d\n", state->g[0], environment_->GetGoalHeuristic(state->MDPstate->StateID, env_num-1));
+        state = (MState*)pSearchStateSpace->heap->heap[i][j+1].heapstate;
+        if (combined)
+            state->h[i] = environment_->GetGoalHeuristic(state->MDPstate->StateID, 6);
+        else
+            state->h[i] = environment_->GetGoalHeuristic(state->MDPstate->StateID, dyn[i-4]);
+        key.key[0] = state->g[0] + (int)pSearchStateSpace->eps1*state->h[i];
 
-        key.key[0] = state->g[0] + pSearchStateSpace->eps1*environment_->GetGoalHeuristic(state->MDPstate->StateID, env_num-1);
-        // getchar();
-        //insert into OPEN
-        // printf("ind is %d\n",state->heapind[i]);
-        // printf("heap size %d\n", pSearchStateSpace->heap->currentsize[env_num-1]);
-
-        state->heapind[env_num-1]=0;
-        pSearchStateSpace->heap->insertheap(state,key,env_num-1);
-        //should never happen, but sometimes it does - somewhere there is a bug TODO
-        //remove from INCONS
+        // state->heapind[i]=0;     //to be fixed
+        if (state->heapind[i]==0)
+        pSearchStateSpace->heap->insertheap(state,key,i);         //to be fixed
+        else
+        pSearchStateSpace->heap->updateheap(state, key, i);
     }
 
 }
+// void MPlanner::UpdateOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
+// {
+//     MState *state;
+//     CKey key;
+//     CHeapArr* pheap = pSearchStateSpace->heap;
+//     vector<MState*> general;
+//     // printf("Printing The Remaining Queue %d\n", pheap->currentsize[i]);
+//     while(!pheap->emptyheap(i)) {
+//         //get the state
+//         state = (MState*)pheap->deleteminheap(i);
+//         // PrintSearchState(state, stdout);
+//         general.push_back(state);
+//         //printf("what \n");
+//     } //assert(pheap->emptyheap());
+//     //move incons into open
+//     // env_num++;
+//     for (int pp =0; pp < (int) general.size(); pp++)
+//     {
+//         state = general[pp];
+//         //compute f-value
+//         // printf("g %d h %d\n", state->g[0], environment_->GetGoalHeuristic(state->MDPstate->StateID, env_num-1));
+//         if (combined)
+//             state->h[i] = environment_->GetGoalHeuristic(state->MDPstate->StateID, 6);
+//         else
+//             state->h[i] = environment_->GetGoalHeuristic(state->MDPstate->StateID, dyn[i-4]);
+//         key.key[0] = state->g[0] + (int)pSearchStateSpace->eps1*state->h[i];
+//         // getchar();
+//         //insert into OPEN
+//         // printf("ind is %d\n",state->heapind[i]);
+//         // printf("heap size %d\n", pSearchStateSpace->heap->currentsize[env_num-1]);
 
+//         // state->heapind[env_num-1]=0;
+//         state->heapind[i]=0;     //to be fixed
+//         // if (state->heapind[i]!=0)
+//         pSearchStateSpace->heap->insertheap(state,key,i);
+//         //should never happen, but sometimes it does - somewhere there is a bug TODO
+//         //remove from INCONS
+//     }
+// }
 void MPlanner::PrintOpenList(MSearchStateSpace_t* pSearchStateSpace, int i)
 {
     MState *state;
@@ -1513,14 +1663,28 @@ int MPlanner::ImprovePathMHG (MSearchStateSpace_t* pSearchStateSpace, double Max
 //SMHA*
 int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
+
+    //to be fixed
+    lasth_base =1000000;
+    lasth_endeff = 1000000;
+    localmincount_base = 0;
+    localmincount_endeff = 0;
+
+    lasth_dynamic = 1000000;
+    localmincount_dynamic = 0;
+    bool inlocalmindynamic = false;
+
     int expands;
-    MState *state, *searchgoalstate, *laststate;
+    MState *state, *searchgoalstate, *laststate, *laststate_endeff, *laststate_base;
     CKey key, mink, minkey2;
     int minin = -1;
     CKey goalkey[MAX_NUM],minkey[MAX_NUM];
     expands = 0;
 
-    bool inlocalmin = false;  //fahad
+    bool inlocalmin[4] = {false};  //fahad
+    bool inlocalmincombined = false;
+    int localexpansions[2] = {0};    //fahad
+    int localexpansionscombined = 0;
 
     printf("IN IMPROVEPATH SHARED -- %0.3f, %0.3f, %0.3f\n",pSearchStateSpace->eps1, pSearchStateSpace->eps2,pSearchStateSpace->eps1*pSearchStateSpace->eps2 );
 
@@ -1610,54 +1774,204 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
                 // if (minkey[ii].key[0] == INFINITECOST)
                 // printf("(Infinite cost : %d)\n", ii);
                 // printf("currentsize %d is %d\n",ii, pSearchStateSpace->heap->currentsize[ii]);
-                // printf("minkey0 %d\n", pSearchStateSpace->eps2*mink.key[0]);
-                // printf("minkyii %d %ld\n", ii, minkey[ii].key[0]);
-                if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST) || true || true)
+                // if (ii==3)
+                // {printf("minkey0 %f\n", pSearchStateSpace->eps2*mink.key[0]);
+
+                // printf("minky4 %ld\n", minkey[ii].key[0]);
+                // getchar();}
+                if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST))
                  {
                 // if ((minkey[ii].key[0] <= pSearchStateSpace->eps2*mink.key[0]) && (minkey[ii].key[0] < INFINITECOST)) {
                     //printf("From ii = %d\n", ii);
 
                     state = (MState*) pSearchStateSpace->heap->deleteminheap(ii);
-                    // if (ii == 4)
-                    // {
-                    //     CKey k;
-                    //     k = pSearchStateSpace->heap->getminkeyheap(ii);
-                    //     printf("MIN KEY %ld\n", k.key[0]);
-                    // }
 
-                    bool check;
-                    if (ii==3)
+        // if (ii == 2 || ii == 3 || ii == 4 || ii==5)
+        //         printf("h value %d is %d\n", ii, state->h[ii]);
+        if (dynamic)
+        {
+
+            bool check, check_dynamic, check_base, check_endeff;
+
+            // if (ii==4)
+            // {
+            //     printf("h4 %d h2 %d\n", state->h[4], state->h[2]);
+            //     // getchar();
+            // }
+            // if (ii==4)
+            //     printf("size %d\n", pSearchStateSpace->heap->currentsize[ii]);
+
+
+            if (combined == true)
+            {
+                if (ii == 3)
+                {
+                    check_dynamic = CheckLocalMinimum(state, ii);
+                    if ( check_dynamic && !inlocalmindynamic)
                     {
-                        check = CheckLocalMinimum(state, ii);
-                        if ( check == true && !inlocalmin)
+                        lasth_dynamic = 1000000;
+                        // printf("DYNAMIC MINIMIAAA\n");
+                        // getchar();
+                        inlocalmindynamic = true;
+                    // localexpansionscombined++;
+                    // // printf("expands %d\n", localexpansions);
+                    // if (localexpansionscombined > 100)
+                    // {
+                    //     localexpansionscombined = 0;
+
+                        if (environment_->generateRandomValidStateCombined(laststate_endeff->MDPstate->StateID, laststate_base->MDPstate->StateID, laststate_endeff->h[1], laststate_base->h[2]) != 10) //think about first argument
+
+                        // if (env_num < 5)
+                        // {
+                        // printf("updating open list\nupdating open list\nupdating open list\nupdating open list\nupdating open list\n");
+                        env_num--;
+                        CopyOpenList(pSearchStateSpace, 1);
+                        env_num++;
+                        // printf("Local Minima\n");
+                            // getchar();
+                        // }
+                    }
+                    else if (!check_dynamic)
+                        inlocalmindynamic = false;
+                }
+                if (ii == 2)
+                {
+                    check_endeff = CheckLocalMinimum(laststate_endeff, ii-1);
+                    check_base = CheckLocalMinimum(state, ii);
+                    check =  check_base && check_endeff;
+                    if ( check == true && !inlocalmincombined)   //end case
+                    {
+
+                        inlocalmincombined = true;
+                        // printf("valuess %d %d\n", laststate_endeff->h[1], laststate_base->h[2]);
+                        // getchar();
+                        //to be fixed
+
+                        int which = environment_->generateRandomValidStateCombined(laststate_endeff->MDPstate->StateID, laststate_base->MDPstate->StateID, laststate_endeff->h[1], laststate_base->h[2]);
+
+
+                        // printf("LOCAL MINIMA\n");
+
+                        if (env_num < 4 && which!=10)
                         {
-                            inlocalmin = true;
-                            MState* attractiveState;
+                            // printf("copying open list\n");
+                            // getchar();
+                            // if (which == 2)      //done same way in env file
+                                CopyOpenList(pSearchStateSpace, 1);
+                            // else
+                            //     CopyOpenList(pSearchStateSpace, 1);
 
-                            attractiveState = GetAttractiveState(pSearchStateSpace, laststate, ii);
+                            // printf("copied\n");
 
-                            environment_->generateValidStateforState(attractiveState->MDPstate->StateID, laststate->MDPstate->StateID);
-
-
-                            if (env_num < 5)
-                            {
-                                printf("copying open list\n");
-                                CopyOpenList(pSearchStateSpace, 3);
-                                printf("Local Minima\n");
-                                getchar();
-                            }
-
+                            // getchar();
+                            env_num++;
+                            // printf("Local Minima for %d\n", ii);
+                            // printf("env_num %d\n", env_num);
+                            // getchar();
                         }
-                        else if (check == false)
+
+                    }
+                    else if (check_base == false || check_endeff == false)        //search progressing normally
+                    {
+                         lasth_dynamic = 1000000;
+                        localexpansionscombined = 0;
+                        // printf("out of local min\n");
+                        inlocalmincombined = false;
+
+                        env_num = 3;
+
+                    }
+                    laststate_base = state;
+                }
+                if (ii == 1)
+                    laststate_endeff = state;
+
+            }
+
+
+            // independant
+            //////////////////////////////////////////////////////////////////
+            else
+            {
+                if (ii == 4 || ii == 5)
+                {
+                    localexpansions[ii-4]++;
+                    // printf("expands %d\n", localexpansions);
+                    if (localexpansions[ii-4] > 150)
+                    {
+                        localexpansions[ii-4] = 0;
+                        if (dyn[ii-4]-2 == 2)
+                            environment_->generateRandomValidState(laststate_base->MDPstate->StateID, laststate_endeff->h[dyn[ii-4]-2], dyn[ii-4]-2);
+                        else
+                            environment_->generateRandomValidState(laststate_base->MDPstate->StateID, laststate_base->h[dyn[ii-4]-2], dyn[ii-4]-2);
+                        // if (env_num < 5)
+                        // {
+                            printf("updating open list\n");
+                            UpdateOpenList(pSearchStateSpace, ii);
+                            // printf("Local Minima\n");
+                        // }
+                    }
+                }
+
+
+                if (ii == 2 || ii == 3)
+                {
+                    check = CheckLocalMinimum(state, ii);
+                    if ( check == true && !inlocalmin[ii])
+                    {
+                        inlocalmin[ii] = true;
+                        // MState* attractiveState;
+
+                        // attractiveState = GetAttractiveState(pSearchStateSpace, laststate, ii);
+
+                        // environment_->generateValidStateforState(attractiveState->MDPstate->StateID, laststate->MDPstate->StateID);
+                        if (ii == 2)
+                            environment_->generateRandomValidState(laststate_base->MDPstate->StateID, laststate_endeff->h[ii], ii);
+                        else
+                            environment_->generateRandomValidState(laststate_base->MDPstate->StateID, laststate_base->h[ii], ii);
+                        if (env_num < 6)
                         {
-                            // printf("out of local min\n");
-                            inlocalmin = false;
-                            env_num = 4;
+                            // printf("copying open list\n");
+                            CopyOpenList(pSearchStateSpace, ii);
+
+                            dyn[num_dyn] = ii + 2;
+                            num_dyn++;
+                            env_num++;
+                            printf("Local Minima for %d\n", ii);
+                            printf("env_num %d\n", env_num);
+                            // getchar();
                         }
 
-                        laststate = state;
+                    }
+                    else if (check == false)        //search progressing normally
+                    {
+                        localexpansions[ii-2] = 0;
+                        // printf("out of local min\n");
+                        inlocalmin[ii] = false;
+
+                        env_num = 4;
+                        num_dyn = 0;
+                        if (inlocalmin[2] == true)
+                        {
+                            env_num++;
+                            num_dyn++;
+                        }
+                        if (inlocalmin[3] == true)
+                        {
+                            env_num++;
+                            num_dyn++;
+                        }
                     }
 
+                    if (ii == 2)
+                        laststate_endeff = state;
+                    else
+                        laststate_base = state;
+                }
+
+            }
+
+        }
 
 
                     assert (state->iterationclosed[0] != pSearchStateSpace->searchiteration);
@@ -1679,9 +1993,10 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
                         }
                         expand_s[ii]++;
                         for (int iii = 0; iii < env_num; iii++) {
-                            if(state->heapind[iii] != 0)
+                            if(state->heapind[iii] != 0 && state->heapind[iii]>0 && state->heapind[iii] < 100000)
                                 {
                                     // printf("queue %d bool %d\n",iii, pSearchStateSpace->heap->inheap(state,iii) );
+                                    // printf("indddddd %d and value %d\n", iii, state->heapind[iii]);
                                     pSearchStateSpace->heap->deleteheap(state,iii); //,ii);
                                 }
                             minkey[iii] = pSearchStateSpace->heap->getminkeyheap(iii);
@@ -1747,6 +2062,7 @@ int MPlanner::ImprovePathRoundRobinShared (MSearchStateSpace_t* pSearchStateSpac
         //printf("Min key -- %ld, index -- %d\n", mink.key[0], 0);
     int retv = 1;
     if (hush) {
+        // environment_->visualizeState(state->MDPstate->StateID);
         printf("Got a solution in search --%d, multfactor -- %0.1f, margin -- %0.1f\n", conv, pSearchStateSpace->eps1, pSearchStateSpace->eps2);
         for (int ii = 0; ii < env_num; ii++) {
             printf("search[%d] expands= %d\n", ii, expand_s[ii]);
@@ -2580,19 +2896,79 @@ void MPlanner::print_searchpath(FILE* fOut)
 
 bool MPlanner::CheckLocalMinimum(MState* state, int i)
 {
-       // getchar();
-    printf("h value %d\n", state->h[i]);
-    static int last_h = 1000000;
-    if (state->h[i] < last_h)
-    {
-        last_h = state->h[i];
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    //to be fixed (make class variables)
 
+       // getchar();
+    // printf("h value for %d is %d\n", i, state->h[i]);
+
+    switch (i){
+        case 1:     //end_eff
+        {
+            if (state->h[i] < lasth_endeff)
+            {
+                lasth_endeff = state->h[i];
+                localmincount_endeff = 0;
+                return false;
+            }
+            // else if (state->h[i] > lasth_endeff)
+            //     return true;
+            else
+            {
+                localmincount_endeff++;
+            }
+            // if (state->h[i] == 0)
+            //     return false;
+            if (localmincount_endeff > LOCALMIN_LIMIT)
+                return true;
+            else
+                return false;
+        }
+        case 2:     //base
+        {
+            if (state->h[i] < lasth_base)
+            {
+                lasth_base = state->h[i];
+                localmincount_base = 0;
+                return false;
+            }
+            else
+            {
+                localmincount_base++;
+
+            }
+            // printf("count %d \n", localmincount_base);
+            // if (state->h[i] == 0)       //hack
+            //     return false;
+            if (localmincount_base > LOCALMIN_LIMIT)
+                return true;
+            else
+                return false;
+        }
+        case 3:
+        {
+            // printf("state %d last %d\n", state->h[i], lasth_dynamic);
+            if (state->h[i] < lasth_dynamic)
+            {
+                lasth_dynamic = state->h[i];
+                localmincount_dynamic = 0;
+                return false;
+            }
+            else
+            {
+                localmincount_dynamic++;
+                // printf("count %d\n", localmincount_dynamic);
+
+            }
+
+            // printf("count %d \n", localmincount_base);
+            // if (state->h[i] == 0)       //hack
+            //     return false;
+            if (localmincount_dynamic > LOCALMIN_LIMIT)
+                return true;
+            else
+                return false;
+        }
+    }
 }
 
 MState* MPlanner::GetAttractiveState(MSearchStateSpace_t* pSearchStateSpace, MState* state, int i)

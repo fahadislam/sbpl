@@ -116,8 +116,10 @@ public:
     virtual void visualizeState(int stateID){};    //fahad
 
     virtual void generateValidStateforState(int attractstateID, int repulstateID){};   //fahad
+    virtual void generateRandomValidState(int stateID, int h, int i){}; //fahad
+    virtual int generateRandomValidStateCombined(int stateID_endeff, int stateID_base, int h_endeff, int h_base){}; //fahad
 
-
+    virtual void passKeyValue(int val, int g){};
     /**
      * \brief see comments for GetSuccs functon
      */
